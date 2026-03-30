@@ -12,6 +12,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
@@ -84,7 +85,7 @@ final class TmmsInputCaptureSubscriber implements EventSubscriberInterface
      *
      * @return array<string, string>
      */
-    private function readRequestPayload(\Symfony\Component\HttpFoundation\Request $request, string $productId): array
+    private function readRequestPayload(Request $request, string $productId): array
     {
         /** @var array<string, array<string, mixed>> $lineItems */
         $lineItems = $request->request->all('lineItems');

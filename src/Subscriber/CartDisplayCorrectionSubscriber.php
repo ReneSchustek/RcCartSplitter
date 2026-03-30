@@ -6,7 +6,6 @@ namespace Ruhrcoder\RcCartSplitter\Subscriber;
 
 use Ruhrcoder\RcCartSplitter\TmmsConstants;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
-use Shopware\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
