@@ -1,0 +1,33 @@
+{
+    "name": "ruhrcoder/rc-cart-splitter",
+    "description": "Erzeugt separate Warenkorbpositionen wenn Kundeneingaben (z. B. TMMS) sich unterscheiden",
+    "version": "1.0.0",
+    "type": "shopware-platform-plugin",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Ruhrcoder",
+            "homepage": "https://ruhrcoder.de"
+        }
+    ],
+    "require": {
+        "shopware/core": "~6.7.0 || ~6.8.0",
+        "shopware/storefront": "~6.7.0 || ~6.8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ruhrcoder\\RcCartSplitter\\": "src/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Ruhrcoder\\RcCartSplitter\\RcCartSplitter",
+        "label": {
+            "de-DE": "Warenkorb-Positionstrennung",
+            "en-GB": "Cart Position Splitter"
+        },
+        "description": {
+            "de-DE": "Erzeugt separate Warenkorbpositionen wenn Kundeneingaben (z. B. aus TmmsProductCustomerInputs) sich unterscheiden. Gleiche Eingaben erhöhen die Menge, unterschiedliche Eingaben erzeugen neue Positionen.",
+            "en-GB": "Creates separate cart positions when customer inputs (e.g. from TmmsProductCustomerInputs) differ. Same inputs increase quantity, different inputs create new positions."
+        }
+    }
+}

@@ -1,0 +1,23 @@
+{% sw_extends '@Storefront/storefront/component/line-item/type/product.html.twig' %}
+
+{% block component_line_item_type_product_label %}
+    {{ parent() }}
+
+    {# TMMS-Kundeneingaben aus dem RcCartSplitter-Payload anzeigen #}
+    {% if lineItem.payload.rcTmmsActive is defined %}
+        <ul class="rc-cart-splitter-inputs list-unstyled small text-muted mt-1 mb-0">
+            {% for i in 1..5 %}
+                {% set value = lineItem.payload['rcTmmsField' ~ i ~ 'Value']|default('') %}
+                {% set label = lineItem.payload['rcTmmsField' ~ i ~ 'Label']|default('') %}
+                {% if value is not empty %}
+                    <li>
+                        {% if label is not empty %}
+                            <strong>{{ label }}:</strong>
+                        {% endif %}
+                        {{ value }}
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}
