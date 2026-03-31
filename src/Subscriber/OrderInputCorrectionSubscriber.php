@@ -7,14 +7,17 @@ namespace Ruhrcoder\RcCartSplitter\Subscriber;
 use Ruhrcoder\RcCartSplitter\TmmsConstants;
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * Korrigiert die TMMS-Kundeneingaben pro Bestellposition.
  *
- * TMMS schreibt alle Positionen desselben Produkts mit den gleichen Session-Daten.
- * Dieser Subscriber läuft NACH TMMS (niedrigere Priorität) und überschreibt
+ * TMMS schreibt alle Positionen desselben Produkts mit den gleichen Session-Daten,
+ * sowohl bei CheckoutOrderPlaced als auch bei CheckoutFinishPageLoaded.
+ * Dieser Subscriber läuft NACH TMMS auf beiden Events und überschreibt
  * die custom_fields mit den per-LineItem gesicherten Daten aus dem Payload.
  */
 final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
@@ -28,45 +31,72 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            CheckoutOrderPlacedEvent::class => ['onOrderPlaced', -100],
+            CheckoutOrderPlacedEvent::class => ['onOrderPlaced', -500],
+            CheckoutFinishPageLoadedEvent::class => ['onCheckoutFinish', -500],
         ];
     }
 
     public function onOrderPlaced(CheckoutOrderPlacedEvent $event): void
     {
-        $order = $event->getOrder();
-        $lineItems = $order->getLineItems();
+        $lineItems = $event->getOrder()->getLineItems();
 
         if ($lineItems === null) {
             return;
         }
 
+        $this->correctLineItems($lineItems, $event->getContext());
+    }
+
+    public function onCheckoutFinish(CheckoutFinishPageLoadedEvent $event): void
+    {
+        $lineItems = $event->getPage()->getOrder()->getLineItems();
+
+        if ($lineItems === null) {
+            return;
+        }
+
+        $this->correctLineItems($lineItems, $event->getContext());
+    }
+
+    private function correctLineItems(OrderLineItemCollection $lineItems, \Shopware\Core\Framework\Context $context): void
+    {
         $updates = [];
 
         foreach ($lineItems as $lineItem) {
-            $payload = $lineItem->getPayload();
+            $corrected = $this->correctSingleItem($lineItem);
 
-            // Quelle 1: Neue Payload-Keys (vom JS injiziert)
-            $customFields = $this->buildFromPayloadKeys($payload, $lineItem->getCustomFields() ?? []);
-
-            // Quelle 2: Fallback auf alte Session-basierte Daten
-            if ($customFields === null) {
-                $customFields = $this->buildFromSessionData($payload, $lineItem->getCustomFields() ?? []);
-            }
-
-            if ($customFields === null) {
+            if ($corrected === null) {
                 continue;
             }
 
             $updates[] = [
                 'id' => $lineItem->getId(),
-                'customFields' => $customFields,
+                'customFields' => $corrected,
             ];
+
+            // Auch das Entity-Objekt im Speicher korrigieren, damit nachfolgende
+            // Subscriber oder Template-Rendering die richtigen Werte sehen
+            $lineItem->setCustomFields($corrected);
         }
 
         if ($updates !== []) {
-            $this->orderLineItemRepository->update($updates, $event->getContext());
+            $this->orderLineItemRepository->update($updates, $context);
         }
+    }
+
+    private function correctSingleItem(OrderLineItemEntity $lineItem): ?array
+    {
+        $payload = $lineItem->getPayload();
+
+        // Quelle 1: Neue Payload-Keys (vom JS injiziert)
+        $customFields = $this->buildFromPayloadKeys($payload, $lineItem->getCustomFields() ?? []);
+
+        // Quelle 2: Fallback auf alte Session-basierte Daten
+        if ($customFields === null) {
+            $customFields = $this->buildFromSessionData($payload, $lineItem->getCustomFields() ?? []);
+        }
+
+        return $customFields;
     }
 
     /**
