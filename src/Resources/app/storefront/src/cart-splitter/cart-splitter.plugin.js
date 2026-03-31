@@ -10,6 +10,10 @@ import Plugin from 'src/plugin-system/plugin.class';
  * einen Hash und setzt die LineItem-ID im Buy-Form entsprechend.
  * Zusätzlich werden die Kundeneingaben als Hidden-Felder ins Buy-Form
  * injiziert, damit sie im Warenkorb angezeigt werden können.
+ *
+ * Generisches Suffix-Protokoll: Alle form.dataset.rc*Suffix-Attribute
+ * werden automatisch in den Hash einbezogen, damit zukünftige Plugins
+ * (z.B. RcColorPicker) ohne Code-Änderung hier funktionieren.
  */
 export default class CartSplitterPlugin extends Plugin {
 
@@ -33,14 +37,10 @@ export default class CartSplitterPlugin extends Plugin {
             return;
         }
 
-        this._meterSuffix = '';
         this._payloadPrefix = 'lineItems[' + this._productId + '][payload]';
 
         this._boundUpdate = this._onInputChanged.bind(this);
-        this._boundMeterChanged = (e) => {
-            this._meterSuffix = (e.detail && e.detail.suffix) ? e.detail.suffix : '';
-            this._onInputChanged();
-        };
+        this._boundSuffixChanged = () => this._onInputChanged();
         this._boundBeforeSubmit = this._injectHiddenFields.bind(this);
 
         this._registerEvents();
@@ -54,8 +54,10 @@ export default class CartSplitterPlugin extends Plugin {
             });
         }
 
-        if (this._boundMeterChanged && this._form) {
-            this._form.removeEventListener('rcMeterLengthChanged', this._boundMeterChanged);
+        if (this._boundSuffixChanged && this._form) {
+            this._suffixEvents.forEach(evt => {
+                this._form.removeEventListener(evt, this._boundSuffixChanged);
+            });
         }
 
         if (this._boundBeforeSubmit && this._form) {
@@ -71,10 +73,14 @@ export default class CartSplitterPlugin extends Plugin {
             input.addEventListener('input', this._boundUpdate);
         });
 
-        this._form.addEventListener('rcMeterLengthChanged', this._boundMeterChanged);
+        // Generisch auf alle rc*Changed-Events reagieren
+        this._suffixEvents = ['rcMeterLengthChanged', 'rcColorPickerChanged'];
+        this._suffixEvents.forEach(evt => {
+            this._form.addEventListener(evt, this._boundSuffixChanged);
+        });
+
         // capture: true → feuert VOR Shopware's AddToCartPlugin (das auf bubble lauscht)
         this._form.addEventListener('submit', this._boundBeforeSubmit, true);
-        this._meterSuffix = this._form.dataset.rcMeterSuffix || '';
     }
 
     /**
@@ -102,9 +108,6 @@ export default class CartSplitterPlugin extends Plugin {
         return inputs;
     }
 
-    /**
-     * Wird bei jeder Eingabeänderung aufgerufen.
-     */
     _onInputChanged() {
         this._updateLineItemId();
     }
@@ -112,9 +115,10 @@ export default class CartSplitterPlugin extends Plugin {
     _updateLineItemId() {
         const values = this._collectValues();
         const hasValues = values.some(v => v !== '');
+        const allSuffixes = this._collectAllSuffixes();
 
-        if (hasValues || this._meterSuffix) {
-            this._idInput.value = this._computeId(values);
+        if (hasValues || allSuffixes) {
+            this._idInput.value = this._computeId(values, allSuffixes);
         } else {
             this._idInput.value = this._productId;
         }
@@ -184,14 +188,11 @@ export default class CartSplitterPlugin extends Plugin {
         const rawLabel = labelInput ? labelInput.value.trim() : '';
 
         // Platzhalter verwenden, wenn er sich vom Label unterscheidet
-        // (TMMS setzt einen Default-Platzhalter wenn keiner konfiguriert ist —
-        // dieser unterscheidet sich immer vom Label)
         if (placeholder !== '' && placeholder !== rawLabel) {
             return this._cleanLabel(placeholder);
         }
 
-        // Fallback: Beschriftung (Label)
-        // Kurzname: Text vor " - ", sonst vollständiges Label
+        // Fallback: Kurzname (Text vor " - ") oder vollständiges Label
         if (rawLabel.indexOf(' - ') !== -1) {
             return this._cleanLabel(rawLabel.split(' - ')[0].trim());
         }
@@ -199,9 +200,6 @@ export default class CartSplitterPlugin extends Plugin {
         return this._cleanLabel(rawLabel);
     }
 
-    /**
-     * Entfernt abschließende Doppelpunkte und Leerzeichen.
-     */
     _cleanLabel(label) {
         return label.replace(/[\s:]+$/, '');
     }
@@ -214,11 +212,32 @@ export default class CartSplitterPlugin extends Plugin {
         return values;
     }
 
-    _computeId(values) {
+    /**
+     * Sammelt alle rc*Suffix-Data-Attribute vom Formular.
+     * Damit werden Suffixe anderer Plugins (RcDynamicPrice, RcColorPicker, etc.)
+     * automatisch in den Hash einbezogen — ohne plugin-spezifischen Code.
+     */
+    _collectAllSuffixes() {
         const parts = [];
-        if (this._meterSuffix) {
-            parts.push(this._meterSuffix);
+        const dataset = this._form.dataset;
+
+        for (const key in dataset) {
+            if (key.startsWith('rc') && key.endsWith('Suffix') && dataset[key]) {
+                parts.push(key + '=' + dataset[key]);
+            }
         }
+
+        return parts.sort().join('\x00');
+    }
+
+    _computeId(values, suffixes) {
+        const parts = [];
+
+        // Generische Suffixe anderer Plugins
+        if (suffixes) {
+            parts.push(suffixes);
+        }
+
         values.forEach((v, i) => {
             if (v !== '') {
                 parts.push('f' + i + '=' + v);
