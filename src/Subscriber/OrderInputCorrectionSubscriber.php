@@ -8,6 +8,7 @@ use Ruhrcoder\RcCartSplitter\TmmsConstants;
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -31,6 +32,8 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
+            // Prioritaet -500: muss nach TMMS laufen (Prioritaet 0), das alle Positionen
+            // desselben Produkts mit den gleichen Session-Daten ueberschreibt
             CheckoutOrderPlacedEvent::class => ['onOrderPlaced', -500],
             CheckoutFinishPageLoadedEvent::class => ['onCheckoutFinish', -500],
         ];
@@ -58,7 +61,7 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
         $this->correctLineItems($lineItems, $event->getContext());
     }
 
-    private function correctLineItems(OrderLineItemCollection $lineItems, \Shopware\Core\Framework\Context $context): void
+    private function correctLineItems(OrderLineItemCollection $lineItems, Context $context): void
     {
         $updates = [];
 
