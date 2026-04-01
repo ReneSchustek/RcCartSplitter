@@ -6,15 +6,27 @@
 
     <services>
 
+        <!-- Services -->
+
+        <service id="Ruhrcoder\RcCartSplitter\Service\TmmsPayloadReader"/>
+
+        <service id="Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectionService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="logger"/>
+        </service>
+
+        <!-- Subscriber -->
+
         <service id="Ruhrcoder\RcCartSplitter\Subscriber\TmmsInputCaptureSubscriber">
             <argument type="service" id="request_stack"/>
             <argument type="service" id="product.repository"/>
+            <argument type="service" id="Ruhrcoder\RcCartSplitter\Service\TmmsPayloadReader"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 
         <service id="Ruhrcoder\RcCartSplitter\Subscriber\OrderInputCorrectionSubscriber">
             <argument type="service" id="order_line_item.repository"/>
-            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectionService"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 

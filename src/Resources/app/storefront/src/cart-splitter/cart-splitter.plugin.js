@@ -20,6 +20,8 @@ export default class CartSplitterPlugin extends Plugin {
     // Muss mit TmmsConstants::INPUT_COUNT (PHP) übereinstimmen
     static TMMS_MAX_FIELDS = 5;
 
+    _suffixEvents = [];
+
     init() {
         this._form = this.el;
 

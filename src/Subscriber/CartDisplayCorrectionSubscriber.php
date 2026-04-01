@@ -49,6 +49,10 @@ final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
                 $valueKey = TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
                 $value = $lineItem->getPayloadValue($valueKey) ?? '';
 
+                if ($value === '') {
+                    continue;
+                }
+
                 $lineItem->addExtension(
                     'tmmsLineItemCustomerInput' . $i,
                     new ArrayEntity(['value' => $value]),
