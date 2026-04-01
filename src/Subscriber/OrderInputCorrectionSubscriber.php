@@ -4,36 +4,43 @@ declare(strict_types=1);
 
 namespace Ruhrcoder\RcCartSplitter\Subscriber;
 
+use Doctrine\DBAL\Connection;
 use Ruhrcoder\RcCartSplitter\TmmsConstants;
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * Korrigiert die TMMS-Kundeneingaben pro Bestellposition.
  *
- * TMMS schreibt alle Positionen desselben Produkts mit den gleichen Session-Daten,
- * sowohl bei CheckoutOrderPlaced als auch bei CheckoutFinishPageLoaded.
- * Dieser Subscriber läuft NACH TMMS auf beiden Events und überschreibt
- * die custom_fields mit den per-LineItem gesicherten Daten aus dem Payload.
+ * TMMS schreibt alle Positionen desselben Produkts mit den gleichen Session-Daten.
+ * Dieser Subscriber läuft NACH TMMS und überschreibt die custom_fields mit den
+ * per-LineItem gesicherten Daten aus dem Payload.
+ *
+ * Line-Items werden frisch aus der DB geladen (gegen In-Memory-Manipulation durch TMMS).
+ * Das Update erfolgt per DBAL (gegen DAL-Event-Kaskade durch TMMS).
  */
 final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
 {
     /** @param EntityRepository<OrderLineItemCollection> $orderLineItemRepository */
     public function __construct(
         private readonly EntityRepository $orderLineItemRepository,
+        private readonly Connection $connection,
     ) {
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            // Prioritaet -500: muss nach TMMS laufen (Prioritaet 0), das alle Positionen
-            // desselben Produkts mit den gleichen Session-Daten ueberschreibt
+            // Muss nach TMMS laufen (Priorität ~0), das alle Positionen
+            // desselben Produkts mit den gleichen Session-Daten überschreibt
             CheckoutOrderPlacedEvent::class => ['onOrderPlaced', -500],
             CheckoutFinishPageLoadedEvent::class => ['onCheckoutFinish', -500],
         ];
@@ -41,55 +48,70 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
 
     public function onOrderPlaced(CheckoutOrderPlacedEvent $event): void
     {
-        $lineItems = $event->getOrder()->getLineItems();
-
-        if ($lineItems === null) {
-            return;
-        }
-
-        $this->correctLineItems($lineItems, $event->getContext());
+        $order = $event->getOrder();
+        $this->correctOrder($order->getId(), $event->getContext(), $order->getLineItems());
     }
 
     public function onCheckoutFinish(CheckoutFinishPageLoadedEvent $event): void
     {
-        $lineItems = $event->getPage()->getOrder()->getLineItems();
+        $order = $event->getPage()->getOrder();
+        $this->correctOrder($order->getId(), $event->getSalesChannelContext()->getContext(), $order->getLineItems());
+    }
 
-        if ($lineItems === null) {
+    private function correctOrder(string $orderId, Context $context, ?OrderLineItemCollection $memoryItems): void
+    {
+        // Frisch aus DB laden, damit TMMS-Modifikationen an In-Memory-Entities
+        // unsere Payload-Keys nicht verdecken
+        $freshItems = $this->loadLineItemsFromDb($orderId, $context);
+
+        if ($freshItems->count() === 0) {
             return;
         }
 
-        $this->correctLineItems($lineItems, $event->getContext());
+        $this->correctLineItems($freshItems, $memoryItems);
     }
 
-    private function correctLineItems(OrderLineItemCollection $lineItems, Context $context): void
+    private function loadLineItemsFromDb(string $orderId, Context $context): OrderLineItemCollection
     {
-        $updates = [];
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('orderId', $orderId));
 
-        foreach ($lineItems as $lineItem) {
+        /** @var OrderLineItemCollection $collection */
+        $collection = $this->orderLineItemRepository->search($criteria, $context)->getEntities();
+
+        return $collection;
+    }
+
+    private function correctLineItems(
+        OrderLineItemCollection $freshItems,
+        ?OrderLineItemCollection $memoryItems,
+    ): void {
+        foreach ($freshItems as $lineItem) {
             $corrected = $this->correctSingleItem($lineItem);
 
             if ($corrected === null) {
                 continue;
             }
 
-            $updates[] = [
-                'id' => $lineItem->getId(),
-                'customFields' => $corrected,
-            ];
+            // DBAL-Update: umgeht DAL-Events, damit TMMS unsere Korrektur
+            // nicht per EntityWrittenEvent wieder überschreiben kann
+            $this->connection->executeStatement(
+                'UPDATE order_line_item SET custom_fields = :cf WHERE id = :id',
+                [
+                    'cf' => json_encode($corrected, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
+                    'id' => Uuid::fromHexToBytes($lineItem->getId()),
+                ],
+            );
 
-            // Auch das Entity-Objekt im Speicher korrigieren, damit nachfolgende
-            // Subscriber oder Template-Rendering die richtigen Werte sehen
+            // In-Memory-Entities korrigieren für nachfolgende Subscriber / Templates
             $lineItem->setCustomFields($corrected);
-        }
-
-        if ($updates !== []) {
-            $this->orderLineItemRepository->update($updates, $context);
+            $memoryItems?->get($lineItem->getId())?->setCustomFields($corrected);
         }
     }
 
     private function correctSingleItem(OrderLineItemEntity $lineItem): ?array
     {
-        $payload = $lineItem->getPayload();
+        $payload = $lineItem->getPayload() ?? [];
 
         // Quelle 1: Neue Payload-Keys (vom JS injiziert)
         $customFields = $this->buildFromPayloadKeys($payload, $lineItem->getCustomFields() ?? []);

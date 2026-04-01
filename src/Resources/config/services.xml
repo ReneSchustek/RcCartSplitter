@@ -14,6 +14,7 @@
 
         <service id="Ruhrcoder\RcCartSplitter\Subscriber\OrderInputCorrectionSubscriber">
             <argument type="service" id="order_line_item.repository"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 

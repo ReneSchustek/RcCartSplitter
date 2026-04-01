@@ -5,8 +5,10 @@
 
     {# TMMS-Kundeneingaben aus dem RcCartSplitter-Payload anzeigen #}
     {% if lineItem.payload.rcTmmsActive is defined %}
+        {# Muss mit TmmsConstants::INPUT_COUNT (PHP) übereinstimmen #}
+        {% set maxFields = 5 %}
         <ul class="rc-cart-splitter-inputs list-unstyled small text-muted mt-1 mb-0">
-            {% for i in 1..5 %}
+            {% for i in 1..maxFields %}
                 {% set value = lineItem.payload['rcTmmsField' ~ i ~ 'Value']|default('') %}
                 {% set label = lineItem.payload['rcTmmsField' ~ i ~ 'Label']|default('') %}
                 {% if value is not empty %}

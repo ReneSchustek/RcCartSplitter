@@ -17,6 +17,9 @@ import Plugin from 'src/plugin-system/plugin.class';
  */
 export default class CartSplitterPlugin extends Plugin {
 
+    // Muss mit TmmsConstants::INPUT_COUNT (PHP) übereinstimmen
+    static TMMS_MAX_FIELDS = 5;
+
     init() {
         this._form = this.el;
 
@@ -90,7 +93,7 @@ export default class CartSplitterPlugin extends Plugin {
     _getTmmsInputs() {
         const inputs = [];
 
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= CartSplitterPlugin.TMMS_MAX_FIELDS; i++) {
             const tmmsForm = document.getElementById(
                 'productCustomerInputForm-' + this._productId + '-' + i
             );
@@ -135,7 +138,7 @@ export default class CartSplitterPlugin extends Plugin {
 
         let hasAnyValue = false;
 
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= CartSplitterPlugin.TMMS_MAX_FIELDS; i++) {
             const tmmsForm = document.getElementById(
                 'productCustomerInputForm-' + this._productId + '-' + i
             );
