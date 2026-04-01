@@ -1,22 +1,8 @@
 # ============================================================
-# .gitignore Template – [PROJEKTNAME]
-# ============================================================
-# Hinweis: AI-Artefakte, STATUS.md, briefs/, DEPLOYMENT.md,
-# zugaenge.md usw. sind in ~/.gitignore_global eingetragen
-# und müssen hier NICHT wiederholt werden.
+# .gitignore – RcCartSplitter
 # ============================================================
 
-# ============================================================
-# Hinweis: reviews/ gehört NICHT in .gitignore
-# ============================================================
-# reviews/ wird auf DevBox in Git versioniert (Entwicklungshistorie).
-# GitHub-Export-Script schließt reviews/ automatisch aus.
-# Niemals reviews/ hier eintragen.
-# ============================================================
-
-# ============================================================
-# Secrets / Umgebungsvariablen (NIEMALS in Git!)
-# ============================================================
+# Secrets / Umgebungsvariablen
 .env
 .env.local
 .env.*.local
@@ -27,15 +13,12 @@ secrets.json
 *.key
 config/secrets/
 
-# ============================================================
 # Logs
-# ============================================================
 *.log
 /logs/
 
-# ============================================================
-# [TECHNOLOGIE-SPEZIFISCH – ERGÄNZEN]
-# Für .NET: bin/, obj/, *.user, packages/
-# Für PHP:  vendor/, var/, public/bundles/
-# Für Node: node_modules/, dist/
-# ============================================================
+# PHP / Shopware
+vendor/
+var/
+public/bundles/
+node_modules/
