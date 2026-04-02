@@ -42,6 +42,9 @@ export default class CartSplitterPlugin extends Plugin {
             return;
         }
 
+        // ID-Controller-Attribut: Signalisiert anderen Plugins, dass dieses Plugin die ID-Hoheit hat
+        this._form.dataset.rcIdController = 'true';
+
         this._payloadPrefix = 'lineItems[' + this._productId + '][payload]';
 
         this._boundUpdate = this._onInputChanged.bind(this);
