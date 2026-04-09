@@ -11,7 +11,7 @@ Wenn ein Kunde dasselbe Produkt mehrfach mit **unterschiedlichen Eingaben** (z. 
 - Gleiche Eingabewerte -> Mengenerhöhung
 - Sichert Eingabewerte pro Position im LineItem-Payload (payload-basiert, nicht nur Session)
 - Liest Eingaben bevorzugt aus dem Request-Payload (Hidden-Felder, vom JS injiziert), mit Fallback auf TMMS-Session-Daten
-- Korrigiert die TMMS "Eingabe pruefen"-Anzeige im Warenkorb: Split-Positionen zeigen die korrekten Werte aus dem Payload statt den Session-Wert
+- Korrigiert die TMMS "Eingabe prüfen"-Anzeige im Warenkorb: Split-Positionen zeigen die korrekten Werte aus dem Payload statt den Session-Wert
 - Korrigiert Bestelldaten bei Bestellabschluss (TMMS schreibt sonst die letzte Eingabe auf alle Positionen)
 - Kompatibel mit RcDynamicPrice (Meter-Suffix wird in den Hash einbezogen)
 
@@ -36,9 +36,9 @@ php bin/console cache:clear
 
 2. **BeforeLineItemAddedEvent (TmmsInputCaptureSubscriber):** Liest die TMMS-Kundeneingaben und speichert sie im LineItem-Payload. Bevorzugt werden die Werte aus dem Request-Payload (Hidden-Felder, vom JS injiziert) gelesen. Als Fallback dienen die TMMS-Session-Daten. Damit hat jede Position ihre eigene Kopie der Eingabewerte.
 
-3. **CartPageLoadedEvent (CartDisplayCorrectionSubscriber):** Korrigiert die TMMS "Eingabe pruefen"-Anzeige im Warenkorb. TMMS setzt die LineItem-Extensions aus der Session, die pro Produktnummer gespeichert ist -- bei Split-Positionen steht dort immer der gleiche Wert. Dieser Subscriber ueberschreibt die Extensions mit den korrekten Werten aus dem Payload.
+3. **CartPageLoadedEvent (CartDisplayCorrectionSubscriber):** Korrigiert die TMMS "Eingabe prüfen"-Anzeige im Warenkorb. TMMS setzt die LineItem-Extensions aus der Session, die pro Produktnummer gespeichert ist – bei Split-Positionen steht dort immer der gleiche Wert. Dieser Subscriber überschreibt die Extensions mit den korrekten Werten aus dem Payload.
 
-4. **CheckoutOrderPlacedEvent (OrderInputCorrectionSubscriber):** Korrigiert die custom_fields pro Bestellposition mit den gesicherten Payload-Daten. Ohne diese Korrektur wuerde TMMS die letzte Eingabe auf alle Positionen desselben Produkts schreiben.
+4. **CheckoutOrderPlacedEvent (OrderInputCorrectionSubscriber):** Korrigiert die custom_fields pro Bestellposition mit den gesicherten Payload-Daten. Ohne diese Korrektur würde TMMS die letzte Eingabe auf alle Positionen desselben Produkts schreiben.
 
 ## Konfiguration
 
@@ -54,11 +54,15 @@ Keine eigene Konfiguration nötig. Das Plugin erkennt TMMS-Eingabefelder automat
 ## Entwicklung
 
 ```bash
-composer quality
+composer test         # Unit-Tests ausführen
+composer phpstan      # Statische Analyse (Level 8)
+composer cs-check     # Code-Style prüfen (PSR-12)
+composer cs-fix       # Code-Style automatisch korrigieren
+composer quality      # Alle Checks (cs-check + phpstan + test)
 ```
 
-Fuehrt statische Analyse und Code-Style-Checks aus (sofern in der Shopware-Umgebung konfiguriert).
+CI läuft automatisch bei Push und Pull Requests via GitHub Actions.
 
 ## Lizenz
 
-Proprietaer -- siehe [composer.json](composer.json).
+Proprietär – siehe [composer.json](composer.json).
