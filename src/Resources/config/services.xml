@@ -15,12 +15,19 @@
             <argument type="service" id="logger"/>
         </service>
 
+        <!-- Cart-Input-Provider (TMMS-Default; weitere Plugins koennen unter dem Tag andocken) -->
+
+        <service id="Ruhrcoder\RcCartSplitter\Service\TmmsCartInputProvider">
+            <argument type="service" id="request_stack"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Ruhrcoder\RcCartSplitter\Service\TmmsPayloadReader"/>
+            <tag name="rc_cart_splitter.input_provider"/>
+        </service>
+
         <!-- Subscriber -->
 
-        <service id="Ruhrcoder\RcCartSplitter\Subscriber\TmmsInputCaptureSubscriber">
-            <argument type="service" id="request_stack"/>
-            <argument type="service" id="product.repository"/>
-            <argument type="service" id="Ruhrcoder\RcCartSplitter\Service\TmmsPayloadReader"/>
+        <service id="Ruhrcoder\RcCartSplitter\Subscriber\CartInputCaptureSubscriber">
+            <argument type="tagged_iterator" tag="rc_cart_splitter.input_provider"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ruhrcoder\RcCartSplitter\Tests\Unit\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception as DbalException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -12,6 +13,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectionService;
 use Ruhrcoder\RcCartSplitter\TmmsConstants;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopware\Core\Framework\Uuid\Uuid;
 
 #[CoversClass(OrderInputCorrectionService::class)]
 final class OrderInputCorrectionServiceTest extends TestCase
@@ -29,6 +33,129 @@ final class OrderInputCorrectionServiceTest extends TestCase
             $this->connection,
             $this->logger,
         );
+    }
+
+    // --- correctLineItems (Batch-UPDATE + Transaktion + Error-Flow) ---
+
+    #[Test]
+    public function correctLineItemsDoesNothingWhenNoCorrections(): void
+    {
+        $lineItem = $this->createLineItem(Uuid::randomHex(), payload: []);
+        $collection = new OrderLineItemCollection([$lineItem]);
+
+        $this->connection->expects(self::never())->method('transactional');
+        $this->connection->expects(self::never())->method('executeStatement');
+        $this->logger->expects(self::never())->method('debug');
+
+        $this->service->correctLineItems($collection, null);
+    }
+
+    #[Test]
+    public function correctLineItemsRunsBatchUpdateInsideTransactionAndLogsAggregated(): void
+    {
+        $idA = Uuid::randomHex();
+        $idB = Uuid::randomHex();
+
+        $itemA = $this->createLineItem($idA, payload: [
+            TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
+            'rcTmmsField1Value' => '100cm',
+            'rcTmmsField1Label' => 'Laenge',
+        ]);
+        $itemB = $this->createLineItem($idB, payload: [
+            TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
+            'rcTmmsField1Value' => '200cm',
+            'rcTmmsField1Label' => 'Laenge',
+        ]);
+
+        $fresh = new OrderLineItemCollection([$itemA, $itemB]);
+
+        // transactional ruft den Closure mit der Connection auf
+        $this->connection
+            ->expects(self::once())
+            ->method('transactional')
+            ->willReturnCallback(fn (\Closure $cb): mixed => $cb($this->connection));
+
+        $capturedSql = null;
+        $capturedParams = null;
+        $this->connection
+            ->expects(self::once())
+            ->method('executeStatement')
+            ->willReturnCallback(function (string $sql, array $params = []) use (&$capturedSql, &$capturedParams): int {
+                $capturedSql = $sql;
+                $capturedParams = $params;
+                return 2;
+            });
+
+        // Aggregierter Log-Eintrag, NICHT pro LineItem
+        $this->logger
+            ->expects(self::once())
+            ->method('debug')
+            ->with('TMMS-Eingaben korrigiert', ['count' => 2]);
+
+        $this->service->correctLineItems($fresh, null);
+
+        self::assertNotNull($capturedSql);
+        self::assertStringContainsString('UPDATE order_line_item', $capturedSql);
+        self::assertStringContainsString('CASE id', $capturedSql);
+        self::assertStringContainsString('WHERE id IN', $capturedSql);
+        self::assertCount(4, $capturedParams ?? [], 'Pro LineItem ein id- und ein cf-Parameter');
+
+        // In-Memory-Update wurde durchgefuehrt
+        self::assertSame('100cm', $itemA->getCustomFields()['tmms_customer_input_1_value'] ?? null);
+        self::assertSame('200cm', $itemB->getCustomFields()['tmms_customer_input_1_value'] ?? null);
+    }
+
+    #[Test]
+    public function correctLineItemsLogsErrorAndDoesNotRethrowOnDbalFailure(): void
+    {
+        $id = Uuid::randomHex();
+        $item = $this->createLineItem($id, payload: [
+            TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
+            'rcTmmsField1Value' => '100cm',
+        ]);
+        $fresh = new OrderLineItemCollection([$item]);
+
+        $this->connection
+            ->method('transactional')
+            ->willThrowException($this->createMock(DbalException::class));
+
+        // Fehler darf den Checkout nicht killen — error-Log statt throw
+        $this->logger
+            ->expects(self::once())
+            ->method('error')
+            ->with(
+                'TMMS-Korrektur fehlgeschlagen',
+                self::callback(fn (array $ctx): bool => $ctx['count'] === 1 && $ctx['lineItemIds'] === [$id]),
+            );
+        $this->logger->expects(self::never())->method('debug');
+
+        $this->service->correctLineItems($fresh, null);
+
+        // In-Memory wurde NICHT korrigiert (DB-Write fehlgeschlagen)
+        self::assertSame([], $item->getCustomFields());
+    }
+
+    #[Test]
+    public function correctLineItemsAlsoUpdatesMemoryItems(): void
+    {
+        $id = Uuid::randomHex();
+        $fresh = $this->createLineItem($id, payload: [
+            TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
+            'rcTmmsField1Value' => '100cm',
+        ]);
+        $memory = $this->createLineItem($id, payload: []);
+
+        $freshCol = new OrderLineItemCollection([$fresh]);
+        $memoryCol = new OrderLineItemCollection([$memory]);
+
+        $this->connection
+            ->method('transactional')
+            ->willReturnCallback(fn (\Closure $cb): mixed => $cb($this->connection));
+        $this->connection->method('executeStatement')->willReturn(1);
+
+        $this->service->correctLineItems($freshCol, $memoryCol);
+
+        self::assertSame('100cm', $memory->getCustomFields()['tmms_customer_input_1_value'] ?? null);
     }
 
     // --- buildFromPayloadKeys ---
@@ -193,5 +320,17 @@ final class OrderInputCorrectionServiceTest extends TestCase
         self::assertNotNull($result);
         self::assertSame('', $result['tmms_customer_input_1_value']);
         self::assertSame('', $result['tmms_customer_input_1_label']);
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function createLineItem(string $id, array $payload): OrderLineItemEntity
+    {
+        $entity = new OrderLineItemEntity();
+        $entity->setId($id);
+        $entity->setUniqueIdentifier($id);
+        $entity->setPayload($payload);
+        $entity->setCustomFields([]);
+
+        return $entity;
     }
 }

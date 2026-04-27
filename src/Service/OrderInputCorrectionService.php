@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ruhrcoder\RcCartSplitter\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception as DbalException;
 use Psr\Log\LoggerInterface;
 use Ruhrcoder\RcCartSplitter\TmmsConstants;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
@@ -24,34 +25,50 @@ final class OrderInputCorrectionService
      * Korrigiert alle LineItems einer Bestellung anhand der gesicherten Payload-Daten.
      *
      * DBAL-Update umgeht DAL-Events, damit TMMS unsere Korrektur
-     * nicht per EntityWrittenEvent wieder überschreiben kann.
+     * nicht per EntityWrittenEvent wieder ueberschreiben kann. Der Schreibvorgang
+     * laeuft als einzelnes Batch-CASE-WHEN-Statement in einer Transaktion, damit
+     * grosse Bestellungen nicht zu N separaten Roundtrips fuehren und parallele
+     * TMMS-Schreibvorgaenge keinen Teilstand sehen.
      */
     public function correctLineItems(
         OrderLineItemCollection $freshItems,
         ?OrderLineItemCollection $memoryItems,
     ): void {
+        /** @var array<string, array<string, mixed>> $corrections */
+        $corrections = [];
         foreach ($freshItems as $lineItem) {
             $corrected = $this->correctSingleItem($lineItem);
-
             if ($corrected === null) {
                 continue;
             }
+            $corrections[$lineItem->getId()] = $corrected;
+        }
 
-            $this->connection->executeStatement(
-                'UPDATE order_line_item SET custom_fields = :cf WHERE id = :id',
-                [
-                    'cf' => json_encode($corrected, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
-                    'id' => Uuid::fromHexToBytes($lineItem->getId()),
-                ],
-            );
+        if ($corrections === []) {
+            return;
+        }
 
-            $this->logger->debug('TMMS-Eingaben korrigiert', [
-                'lineItemId' => $lineItem->getId(),
+        try {
+            $this->connection->transactional(function (Connection $connection) use ($corrections): void {
+                $this->batchUpdateCustomFields($connection, $corrections);
+            });
+        } catch (DbalException|\JsonException $e) {
+            // Cosmetic-Fix darf den Checkout nicht killen — Fehler aggregiert loggen und abbrechen.
+            $this->logger->error('TMMS-Korrektur fehlgeschlagen', [
+                'lineItemIds' => array_keys($corrections),
+                'count' => count($corrections),
+                'exception' => $e->getMessage(),
             ]);
+            return;
+        }
 
-            // In-Memory-Entities korrigieren für nachfolgende Subscriber / Templates
-            $lineItem->setCustomFields($corrected);
-            $memoryItems?->get($lineItem->getId())?->setCustomFields($corrected);
+        $this->logger->debug('TMMS-Eingaben korrigiert', [
+            'count' => count($corrections),
+        ]);
+
+        foreach ($corrections as $hexId => $customFields) {
+            $freshItems->get($hexId)?->setCustomFields($customFields);
+            $memoryItems?->get($hexId)?->setCustomFields($customFields);
         }
     }
 
@@ -120,5 +137,43 @@ final class OrderInputCorrectionService
         }
 
         return $customFields;
+    }
+
+    /**
+     * Schreibt alle Korrekturen in einem einzigen UPDATE-Statement (CASE WHEN).
+     *
+     * Bei N LineItems sonst N Roundtrips — bei Bestellungen mit vielen Split-Positionen
+     * dominiert das die Checkout-Finish-Latenz.
+     *
+     * @param array<string, array<string, mixed>> $corrections hexId => customFields
+     * @throws DbalException|\JsonException
+     */
+    private function batchUpdateCustomFields(Connection $connection, array $corrections): void
+    {
+        $caseSql = '';
+        $idPlaceholders = [];
+        $params = [];
+        $i = 0;
+
+        foreach ($corrections as $hexId => $customFields) {
+            $idKey = 'id_' . $i;
+            $cfKey = 'cf_' . $i;
+            $caseSql .= ' WHEN :' . $idKey . ' THEN :' . $cfKey;
+            $idPlaceholders[] = ':' . $idKey;
+            $params[$idKey] = Uuid::fromHexToBytes($hexId);
+            $params[$cfKey] = json_encode(
+                $customFields,
+                \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR,
+            );
+            $i++;
+        }
+
+        $sql = sprintf(
+            'UPDATE order_line_item SET custom_fields = (CASE id%s END) WHERE id IN (%s)',
+            $caseSql,
+            implode(', ', $idPlaceholders),
+        );
+
+        $connection->executeStatement($sql, $params);
     }
 }

@@ -12,18 +12,32 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 final class TmmsPayloadReader
 {
     /**
+     * Maximale Zeichenlaenge pro Eingabewert/Label.
+     *
+     * Schuetzt vor Payload-Bombs: Storefront erlaubt keine sinnvollen Werte
+     * jenseits dieser Groessenordnung, der DB-Spalte custom_fields (JSON) wuerden
+     * Megabyte-Strings ohnehin zum Verhaengnis.
+     */
+    private const MAX_VALUE_LENGTH = 2000;
+
+    /**
      * Liest rcTmmsField*-Werte aus dem Request-Payload (vom JS als Hidden-Felder injiziert).
      *
      * @return array<string, string>
      */
     public function readRequestPayload(Request $request, string $productId): array
     {
-        /** @var array<string, array<string, mixed>> $lineItems */
         $lineItems = $request->request->all('lineItems');
 
-        $itemData = $lineItems[$productId] ?? [];
-        /** @var array<string, string> $payload */
-        $payload = $itemData['payload'] ?? [];
+        $itemData = $lineItems[$productId] ?? null;
+        if (!is_array($itemData)) {
+            return [];
+        }
+
+        $payload = $itemData['payload'] ?? null;
+        if (!is_array($payload)) {
+            return [];
+        }
 
         if (!isset($payload[TmmsConstants::PAYLOAD_TMMS_ACTIVE])) {
             return [];
@@ -35,13 +49,13 @@ final class TmmsPayloadReader
             $valueKey = TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
             $labelKey = TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_LABEL_SUFFIX;
 
-            $value = isset($payload[$valueKey]) ? trim((string) $payload[$valueKey]) : '';
+            $value = $this->normalizeScalar($payload[$valueKey] ?? null);
             if ($value === '') {
                 continue;
             }
 
-            $result[$valueKey] = strip_tags($value);
-            $result[$labelKey] = strip_tags(trim((string) ($payload[$labelKey] ?? '')));
+            $result[$valueKey] = $this->sanitize($value);
+            $result[$labelKey] = $this->sanitize($this->normalizeScalar($payload[$labelKey] ?? null));
         }
 
         return $result;
@@ -75,5 +89,27 @@ final class TmmsPayloadReader
         }
 
         return $inputs;
+    }
+
+    /** Wandelt Raw-Payload-Wert in einen sicheren String. Nicht-Skalare werden verworfen. */
+    private function normalizeScalar(mixed $raw): string
+    {
+        if (!is_scalar($raw)) {
+            return '';
+        }
+
+        return trim((string) $raw);
+    }
+
+    /** Sanitization-Schicht: HTML-Tags entfernen, Laenge begrenzen. */
+    private function sanitize(string $value): string
+    {
+        $stripped = strip_tags($value);
+
+        if (mb_strlen($stripped) > self::MAX_VALUE_LENGTH) {
+            $stripped = mb_substr($stripped, 0, self::MAX_VALUE_LENGTH);
+        }
+
+        return $stripped;
     }
 }

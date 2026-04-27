@@ -142,6 +142,83 @@ final class TmmsPayloadReaderTest extends TestCase
         self::assertSame([], $result);
     }
 
+    #[Test]
+    public function readRequestPayloadReturnsEmptyWhenItemDataNotArray(): void
+    {
+        // Manipulierter Request: lineItems[productId] ist String statt Array
+        $request = new Request(request: [
+            'lineItems' => [
+                'product-123' => 'manipulated-string',
+            ],
+        ]);
+
+        $result = $this->reader->readRequestPayload($request, 'product-123');
+
+        self::assertSame([], $result);
+    }
+
+    #[Test]
+    public function readRequestPayloadReturnsEmptyWhenPayloadNotArray(): void
+    {
+        $request = new Request(request: [
+            'lineItems' => [
+                'product-123' => [
+                    'payload' => 'not-an-array',
+                ],
+            ],
+        ]);
+
+        $result = $this->reader->readRequestPayload($request, 'product-123');
+
+        self::assertSame([], $result);
+    }
+
+    #[Test]
+    public function readRequestPayloadIgnoresNonScalarFieldValues(): void
+    {
+        $request = new Request(request: [
+            'lineItems' => [
+                'product-123' => [
+                    'payload' => [
+                        TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
+                        'rcTmmsField1Value' => ['nested' => 'array'],
+                        'rcTmmsField2Value' => '50cm',
+                        'rcTmmsField2Label' => ['also' => 'array'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $result = $this->reader->readRequestPayload($request, 'product-123');
+
+        self::assertArrayNotHasKey('rcTmmsField1Value', $result);
+        self::assertSame('50cm', $result['rcTmmsField2Value']);
+        self::assertSame('', $result['rcTmmsField2Label']);
+    }
+
+    #[Test]
+    public function readRequestPayloadCapsOverlongValues(): void
+    {
+        $longValue = str_repeat('a', 5000);
+        $request = new Request(request: [
+            'lineItems' => [
+                'product-123' => [
+                    'payload' => [
+                        TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
+                        'rcTmmsField1Value' => $longValue,
+                        'rcTmmsField1Label' => 'Laenge',
+                    ],
+                ],
+            ],
+        ]);
+
+        $result = $this->reader->readRequestPayload($request, 'product-123');
+
+        self::assertArrayHasKey('rcTmmsField1Value', $result);
+        // Sanitization-Layer kappt bei MAX_VALUE_LENGTH (2000)
+        self::assertSame(2000, mb_strlen($result['rcTmmsField1Value']));
+    }
+
     // --- readSessionData ---
 
     #[Test]

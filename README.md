@@ -1,4 +1,4 @@
-# RcCartSplitter
+﻿# RcCartSplitter
 
 Shopware 6 Plugin zur automatischen Positionstrennung im Warenkorb bei unterschiedlichen Kundeneingaben.
 
@@ -34,11 +34,11 @@ php bin/console cache:clear
 
 1. **JavaScript:** Überwacht TMMS-Eingabefelder. Bei jeder Änderung wird ein Hash aller Eingabewerte berechnet und als LineItem-ID gesetzt. Verschiedene Hashes = verschiedene IDs = separate Positionen.
 
-2. **BeforeLineItemAddedEvent (TmmsInputCaptureSubscriber):** Liest die TMMS-Kundeneingaben und speichert sie im LineItem-Payload. Bevorzugt werden die Werte aus dem Request-Payload (Hidden-Felder, vom JS injiziert) gelesen. Als Fallback dienen die TMMS-Session-Daten. Damit hat jede Position ihre eigene Kopie der Eingabewerte.
+2. **BeforeLineItemAddedEvent (CartInputCaptureSubscriber):** Sammelt die Eingaben aller registrierten `CartInputProviderInterface`-Implementierungen und speichert sie im LineItem-Payload. Standard-Provider ist `TmmsCartInputProvider`: bevorzugt werden die Werte aus dem Request-Payload (Hidden-Felder, vom JS injiziert) gelesen, als Fallback dienen die TMMS-Session-Daten. Weitere Input-Plugins koennen einen eigenen Provider unter dem Tag `rc_cart_splitter.input_provider` registrieren.
 
 3. **CartPageLoadedEvent (CartDisplayCorrectionSubscriber):** Korrigiert die TMMS "Eingabe prüfen"-Anzeige im Warenkorb. TMMS setzt die LineItem-Extensions aus der Session, die pro Produktnummer gespeichert ist – bei Split-Positionen steht dort immer der gleiche Wert. Dieser Subscriber überschreibt die Extensions mit den korrekten Werten aus dem Payload.
 
-4. **CheckoutOrderPlacedEvent (OrderInputCorrectionSubscriber):** Korrigiert die custom_fields pro Bestellposition mit den gesicherten Payload-Daten. Ohne diese Korrektur würde TMMS die letzte Eingabe auf alle Positionen desselben Produkts schreiben.
+4. **CheckoutOrderPlacedEvent (OrderInputCorrectionSubscriber):** Korrigiert die custom_fields pro Bestellposition mit den gesicherten Payload-Daten. Ohne diese Korrektur würde TMMS die letzte Eingabe auf alle Positionen desselben Produkts schreiben. Der Schreibvorgang laeuft als einzelnes Batch-CASE-WHEN-UPDATE in einer Transaktion, damit Bestellungen mit vielen Split-Positionen nicht in N Roundtrips zerfallen; DB-Fehler werden geloggt, brechen den Checkout aber nicht ab.
 
 ## Konfiguration
 
@@ -66,3 +66,15 @@ CI läuft automatisch bei Push und Pull Requests via GitHub Actions.
 ## Lizenz
 
 Proprietär – siehe [composer.json](composer.json).
+
+<!-- TRIAGE-WORKFLOW: auto-managed by triage-deploy.ps1 -->
+## Triage und Reviews
+
+- **Watcher starten:** `.\triage-watch.ps1` (bzw. `.\triage-watch-php.ps1` / `.\triage-watch-shopware.ps1`) im Projekt-Root
+- **Review on-demand:** `.\triage-review.ps1` -- laedt Projekt-Regeln aus `.ai/rules/` und uebergibt sie an Ollama
+- **Enterprise-Review (ERP-2026):** in Claude Code anfragen -- Claude orchestriert, Ollama macht mechanische Sub-Tasks
+- **Status-Dateien:** `.ai/triage-status.json`, `.ai/triage-escalation.md`, `.ai/reviews/*.md`, `.ai/erp/*.md`
+
+Volle Doku: `F:\Entwicklung\_Anleitungen\allgemein\triage-workflow.md`
+Routing-Regeln: `.ai/rules/ollama-delegation.md` und `.ai/rules/enterprise-review.md`
+<!-- /TRIAGE-WORKFLOW -->
