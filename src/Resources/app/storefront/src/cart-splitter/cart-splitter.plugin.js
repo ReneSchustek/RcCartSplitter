@@ -1,23 +1,13 @@
 import Plugin from 'src/plugin-system/plugin.class';
 
-/**
- * RcCartSplitter — ändert die LineItem-ID basierend auf TMMS-Kundeneingaben.
- *
- * TMMS rendert seine Eingabefelder in eigenen Formularen mit ID-Schema:
- * productCustomerInputForm-{productId}-{count}
- *
- * Dieses Plugin findet nur die Felder des zugehörigen Produkts, berechnet
- * einen Hash und setzt die LineItem-ID im Buy-Form entsprechend.
- * Zusätzlich werden die Kundeneingaben als Hidden-Felder ins Buy-Form
- * injiziert, damit sie im Warenkorb angezeigt werden können.
- *
- * Generisches Suffix-Protokoll: Alle form.dataset.rc*Suffix-Attribute
- * werden automatisch in den Hash einbezogen, damit zukünftige Plugins
- * (z.B. RcColorPicker) ohne Code-Änderung hier funktionieren.
- */
+// TMMS-Felder liegen in eigenen Formularen (ID-Schema productCustomerInputForm-{productId}-{count}) —
+// dieses Plugin sammelt sie pro Produkt, leitet daraus eine deterministische LineItem-ID ab und
+// injiziert die Werte als Hidden-Felder, damit der Cart sie ohne weiteren Round-Trip anzeigen kann.
+// Generisches Suffix-Protokoll: alle form.dataset.rc*Suffix-Attribute fliessen automatisch in den Hash
+// ein — andere Plugins (z. B. RcColorPicker) wirken so ohne Code-Aenderung mit.
 export default class CartSplitterPlugin extends Plugin {
 
-    // Muss mit TmmsConstants::INPUT_COUNT (PHP) übereinstimmen
+    // Muss mit TmmsConstants::INPUT_COUNT (PHP) uebereinstimmen
     static TMMS_MAX_FIELDS = 5;
 
     _suffixEvents = [];
@@ -36,13 +26,12 @@ export default class CartSplitterPlugin extends Plugin {
             return;
         }
 
-        // Nur initialisieren wenn TMMS-Felder für dieses Produkt existieren
         const tmmsInputs = this._getTmmsInputs();
         if (tmmsInputs.length === 0) {
             return;
         }
 
-        // ID-Controller-Attribut: Signalisiert anderen Plugins, dass dieses Plugin die ID-Hoheit hat
+        // Markiert dieses Form: andere Ruhrcoder-Plugins duerfen die LineItem-ID nicht mehr aendern
         this._form.dataset.rcIdController = 'true';
 
         this._payloadPrefix = 'lineItems[' + this._productId + '][payload]';
@@ -87,14 +76,11 @@ export default class CartSplitterPlugin extends Plugin {
             this._form.addEventListener(evt, this._boundSuffixChanged);
         });
 
-        // capture: true → feuert VOR Shopware's AddToCartPlugin (das auf bubble lauscht)
+        // capture: true → feuert VOR Shopware-AddToCartPlugin (das auf bubble lauscht)
         this._form.addEventListener('submit', this._boundBeforeSubmit, true);
     }
 
-    /**
-     * Findet TMMS-Eingabefelder die zu DIESEM Produkt gehören.
-     * TMMS-Forms haben ID: productCustomerInputForm-{productId}-{count}
-     */
+    // TMMS-Forms sind nicht im Buy-Form geschachtelt — Zugriff nur ueber die feste ID-Konvention
     _getTmmsInputs() {
         const inputs = [];
 
@@ -132,13 +118,8 @@ export default class CartSplitterPlugin extends Plugin {
         }
     }
 
-    /**
-     * Wird im submit-Event (capture-Phase) aufgerufen — VOR Shopware's AddToCartPlugin.
-     * Injiziert Hidden-Felder mit den aktuellen TMMS-Werten ins Formular,
-     * damit sie bei new FormData(form) erfasst werden.
-     */
+    // Capture-Phase vor Shopware-AddToCartPlugin: Werte muessen Teil von FormData(form) sein
     _injectHiddenFields() {
-        // Alte Hidden-Felder entfernen
         this._form.querySelectorAll('input[data-rc-tmms]').forEach(el => el.remove());
 
         let hasAnyValue = false;
@@ -183,11 +164,7 @@ export default class CartSplitterPlugin extends Plugin {
         this._form.appendChild(input);
     }
 
-    /**
-     * Liest die Bezeichnung für ein TMMS-Feld.
-     * Prüft ob ein Platzhalter konfiguriert ist → verwendet diesen.
-     * Wenn nicht → verwendet die Beschriftung (Label).
-     */
+    // Platzhalter ist im TMMS-Backend die kuerzere, kundenfreundliche Variante des Labels
     _getTmmsFieldLabel(tmmsForm, count) {
         const placeholderInput = tmmsForm.querySelector('[name="tmms-customer-input-placeholder-' + count + '"]');
         const labelInput = tmmsForm.querySelector('[name="tmms-customer-input-label-' + count + '"]');
@@ -195,12 +172,11 @@ export default class CartSplitterPlugin extends Plugin {
         const placeholder = placeholderInput ? placeholderInput.value.trim() : '';
         const rawLabel = labelInput ? labelInput.value.trim() : '';
 
-        // Platzhalter verwenden, wenn er sich vom Label unterscheidet
         if (placeholder !== '' && placeholder !== rawLabel) {
             return this._cleanLabel(placeholder);
         }
 
-        // Fallback: Kurzname (Text vor " - ") oder vollständiges Label
+        // " - " trennt im TMMS-Label oft den Anzeigetext vom internen Zusatz
         if (rawLabel.indexOf(' - ') !== -1) {
             return this._cleanLabel(rawLabel.split(' - ')[0].trim());
         }
@@ -220,11 +196,7 @@ export default class CartSplitterPlugin extends Plugin {
         return values;
     }
 
-    /**
-     * Sammelt alle rc*Suffix-Data-Attribute vom Formular.
-     * Damit werden Suffixe anderer Plugins (RcDynamicPrice, RcColorPicker, etc.)
-     * automatisch in den Hash einbezogen — ohne plugin-spezifischen Code.
-     */
+    // Generisches Suffix-Protokoll: andere Plugins schreiben rc*Suffix ans Form, hier ohne Sonderfaelle einbinden
     _collectAllSuffixes() {
         const parts = [];
         const dataset = this._form.dataset;
@@ -241,7 +213,6 @@ export default class CartSplitterPlugin extends Plugin {
     _computeId(values, suffixes) {
         const parts = [];
 
-        // Generische Suffixe anderer Plugins
         if (suffixes) {
             parts.push(suffixes);
         }

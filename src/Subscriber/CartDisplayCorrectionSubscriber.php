@@ -12,14 +12,8 @@ use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-/**
- * Korrigiert die TMMS "Eingabe prüfen"-Anzeige im Warenkorb.
- *
- * TMMS setzt die LineItem-Extension tmmsLineItemCustomerInput{i} aus der Session,
- * die pro Produktnummer gespeichert ist. Bei Split-Positionen steht dort immer
- * der gleiche Wert. Dieser Subscriber läuft NACH TMMS (Priorität -50) und
- * überschreibt die Extensions mit den korrekten Werten aus dem Payload.
- */
+// Laeuft nach TMMS (Prio -50) und ueberschreibt dessen Extensions, weil TMMS die Werte
+// aus der Session pro Produktnummer setzt und damit alle Split-Positionen identisch macht.
 final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
 {
     public static function getSubscribedEvents(): array

@@ -11,20 +11,10 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 /** Liest TMMS-Kundeneingaben aus Request-Payload oder Session */
 final class TmmsPayloadReader
 {
-    /**
-     * Maximale Zeichenlaenge pro Eingabewert/Label.
-     *
-     * Schuetzt vor Payload-Bombs: Storefront erlaubt keine sinnvollen Werte
-     * jenseits dieser Groessenordnung, der DB-Spalte custom_fields (JSON) wuerden
-     * Megabyte-Strings ohnehin zum Verhaengnis.
-     */
+    // Schutz vor Payload-Bombs — laengere Eingaben sprengen die JSON-Spalte custom_fields ohnehin
     private const MAX_VALUE_LENGTH = 2000;
 
-    /**
-     * Liest rcTmmsField*-Werte aus dem Request-Payload (vom JS als Hidden-Felder injiziert).
-     *
-     * @return array<string, string>
-     */
+    /** @return array<string, string> */
     public function readRequestPayload(Request $request, string $productId): array
     {
         $lineItems = $request->request->all('lineItems');
@@ -61,11 +51,7 @@ final class TmmsPayloadReader
         return $result;
     }
 
-    /**
-     * Liest TMMS-Eingaben aus der Session (Fallback wenn kein Request-Payload vorhanden).
-     *
-     * @return array<int, array<string, string>>
-     */
+    /** @return array<int, array<string, string>> */
     public function readSessionData(SessionInterface $session, string $productNumber): array
     {
         $inputs = [];
@@ -91,7 +77,7 @@ final class TmmsPayloadReader
         return $inputs;
     }
 
-    /** Wandelt Raw-Payload-Wert in einen sicheren String. Nicht-Skalare werden verworfen. */
+    // Nicht-Skalare (Arrays/Objekte) werden verworfen, damit nichts ungeprueft weiterlaeuft
     private function normalizeScalar(mixed $raw): string
     {
         if (!is_scalar($raw)) {
@@ -101,7 +87,7 @@ final class TmmsPayloadReader
         return trim((string) $raw);
     }
 
-    /** Sanitization-Schicht: HTML-Tags entfernen, Laenge begrenzen. */
+    // HTML-Tags raus + Laenge kappen, bevor der Wert in custom_fields landet
     private function sanitize(string $value): string
     {
         $stripped = strip_tags($value);

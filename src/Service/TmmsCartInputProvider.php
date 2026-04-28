@@ -11,14 +11,8 @@ use Shopware\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-/**
- * TMMS-spezifischer Input-Provider.
- *
- * Quelle 1 (bevorzugt): Hidden-Felder aus dem Request-Payload (vom JS injiziert)
- * Quelle 2 (Fallback): TMMS-Session-Daten — fuer den Fallback wird die productNumber
- * benoetigt; sie wird per Native-SQL gelesen, um eine volle ProductEntity-Hydration
- * pro AddToCart zu vermeiden.
- */
+// Bevorzugt JS-Payload; Session-Fallback liest productNumber per Native-SQL,
+// um teure ProductEntity-Hydration pro AddToCart zu vermeiden.
 final class TmmsCartInputProvider implements CartInputProviderInterface
 {
     public function __construct(

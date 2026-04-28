@@ -8,13 +8,8 @@ use Ruhrcoder\RcCartSplitter\Service\CartInputProviderInterface;
 use Shopware\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-/**
- * Schreibt Eingabewerte aus allen registrierten {@see CartInputProviderInterface}-Implementierungen
- * in den LineItem-Payload, sobald ein Produkt in den Warenkorb gelegt wird.
- *
- * Damit ist die Capture-Logik nicht mehr an TMMS gebunden — weitere Input-Plugins
- * koennen einen eigenen Provider unter Tag `rc_cart_splitter.input_provider` registrieren.
- */
+// Capture-Logik bewusst entkoppelt von TMMS: weitere Input-Quellen docken ueber den Tag
+// `rc_cart_splitter.input_provider` an, ohne diesen Subscriber zu aendern.
 final class CartInputCaptureSubscriber implements EventSubscriberInterface
 {
     /** @param iterable<CartInputProviderInterface> $providers */

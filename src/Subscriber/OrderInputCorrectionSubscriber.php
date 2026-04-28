@@ -14,13 +14,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-/**
- * Korrigiert die TMMS-Kundeneingaben pro Bestellposition.
- *
- * TMMS schreibt alle Positionen desselben Produkts mit den gleichen Session-Daten.
- * Dieser Subscriber läuft NACH TMMS und delegiert die Korrektur an den
- * OrderInputCorrectionService.
- */
+// Laeuft nach TMMS, weil TMMS sonst alle Split-Positionen mit den gleichen Session-Daten ueberschreibt;
+// die eigentliche Korrektur liegt im OrderInputCorrectionService.
 final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
 {
     /** @param EntityRepository<OrderLineItemCollection> $orderLineItemRepository */
@@ -32,11 +27,8 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
 
     public static function getSubscribedEvents(): array
     {
+        // Beide Events: TMMS schreibt sowohl bei OrderPlaced als auch bei FinishPageLoaded zurueck
         return [
-            // Muss nach TMMS laufen (Priorität ~0), das alle Positionen
-            // desselben Produkts mit den gleichen Session-Daten überschreibt.
-            // Beide Events nötig: TMMS überschreibt sowohl beim OrderPlaced
-            // als auch beim FinishPageLoaded die custom_fields erneut.
             CheckoutOrderPlacedEvent::class => ['onOrderPlaced', -500],
             CheckoutFinishPageLoadedEvent::class => ['onCheckoutFinish', -500],
         ];
