@@ -44,6 +44,24 @@ php bin/console cache:clear
 
 Keine eigene Konfiguration nötig. Das Plugin erkennt TMMS-Eingabefelder automatisch.
 
+## Barrierefreiheit (BFSG)
+
+Seit dem 28. Juni 2025 verlangt das BFSG für B2C-Shops WCAG 2.2 AA. Dieses Plugin rendert nur einen kleinen Block unter dem Cart-LineItem; alles andere (Buy-Box, Mini-Cart-Region, Fokus-Stil) liegt beim Storefront-Theme.
+
+### Vom Plugin abgedeckt
+
+- Semantische `<dl>/<dt>/<dd>`-Struktur für Begriff-Wert-Paare statt `<ul>/<li>/<strong>` (WCAG 1.3.1 — Beziehungen)
+- Bootstrap-Token `text-body-secondary` statt `text-muted` (WCAG 1.4.3 — dokumentierter Kontrast)
+- Maximale Feldzahl zentral aus `TmmsConstants::INPUT_COUNT`, kein Drift zwischen PHP/JS/Twig
+
+### Theme-/Storefront-Pflicht
+
+- Kontrast ≥ 4.5:1 im aktiven Theme — `text-body-secondary` ist Token-basiert, der finale Wert hängt vom Theme
+- Sichtbarer Fokus auf Buy-Form-Elementen (`:focus-visible`)
+- `<html lang="de">` (oder Sprach-Code des Storefronts)
+- Tastaturbedienbarkeit der Buy-Box inkl. TMMS-Eingabefelder
+- Mini-Cart-Re-Render per AJAX: Container muss `aria-live="polite"` sein, sonst meldet kein Screenreader die neue Eingabeliste
+
 ## Deployment
 
 | Änderung | Befehl |
