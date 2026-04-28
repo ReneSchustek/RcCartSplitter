@@ -34,14 +34,14 @@ final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
                 continue;
             }
 
-            $active = $lineItem->getPayloadValue(TmmsConstants::PAYLOAD_TMMS_ACTIVE);
-            if ($active === null) {
+            $payload = $lineItem->getPayload();
+            if (!isset($payload[TmmsConstants::PAYLOAD_TMMS_ACTIVE])) {
                 continue;
             }
 
             for ($i = 1; $i <= TmmsConstants::INPUT_COUNT; $i++) {
                 $valueKey = TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
-                $value = $lineItem->getPayloadValue($valueKey) ?? '';
+                $value = (string) ($payload[$valueKey] ?? '');
 
                 if ($value === '') {
                     continue;
