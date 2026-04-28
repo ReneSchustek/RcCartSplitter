@@ -13,7 +13,8 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /** Korrigiert TMMS-Kundeneingaben in den custom_fields der Bestellpositionen */
-final class OrderInputCorrectionService
+// Nicht-final, damit der Subscriber-Unit-Test die Service-Aufrufe per Mock verifizieren kann.
+class OrderInputCorrectionService
 {
     public function __construct(
         private readonly Connection $connection,
@@ -21,15 +22,8 @@ final class OrderInputCorrectionService
     ) {
     }
 
-    /**
-     * Korrigiert alle LineItems einer Bestellung anhand der gesicherten Payload-Daten.
-     *
-     * DBAL-Update umgeht DAL-Events, damit TMMS unsere Korrektur
-     * nicht per EntityWrittenEvent wieder ueberschreiben kann. Der Schreibvorgang
-     * laeuft als einzelnes Batch-CASE-WHEN-Statement in einer Transaktion, damit
-     * grosse Bestellungen nicht zu N separaten Roundtrips fuehren und parallele
-     * TMMS-Schreibvorgaenge keinen Teilstand sehen.
-     */
+    // DBAL umgeht DAL-Events, damit TMMS unsere Korrektur nicht per EntityWrittenEvent zurueckschreibt;
+    // Batch-CASE-WHEN in einer Transaktion vermeidet N Roundtrips bei grossen Bestellungen.
     public function correctLineItems(
         OrderLineItemCollection $freshItems,
         ?OrderLineItemCollection $memoryItems,
@@ -77,10 +71,8 @@ final class OrderInputCorrectionService
     {
         $payload = $lineItem->getPayload() ?? [];
 
-        // Quelle 1: Neue Payload-Keys (vom JS injiziert)
+        // Bevorzugt JS-Payload — Session-Fallback nur fuer Altbestellungen ohne Hidden-Felder
         $customFields = $this->buildFromPayloadKeys($payload, $lineItem->getCustomFields() ?? []);
-
-        // Quelle 2: Fallback auf alte Session-basierte Daten
         if ($customFields === null) {
             $customFields = $this->buildFromSessionData($payload, $lineItem->getCustomFields() ?? []);
         }
@@ -89,8 +81,6 @@ final class OrderInputCorrectionService
     }
 
     /**
-     * Liest aus den neuen rcTmmsField{i}Value/Label-Keys.
-     *
      * @param array<string, mixed> $payload
      * @param array<string, mixed> $customFields
      * @return array<string, mixed>|null
@@ -115,8 +105,6 @@ final class OrderInputCorrectionService
     }
 
     /**
-     * Fallback: Liest aus dem alten rc_tmms_inputs-Key (Session-basiert).
-     *
      * @param array<string, mixed> $payload
      * @param array<string, mixed> $customFields
      * @return array<string, mixed>|null
@@ -140,11 +128,6 @@ final class OrderInputCorrectionService
     }
 
     /**
-     * Schreibt alle Korrekturen in einem einzigen UPDATE-Statement (CASE WHEN).
-     *
-     * Bei N LineItems sonst N Roundtrips — bei Bestellungen mit vielen Split-Positionen
-     * dominiert das die Checkout-Finish-Latenz.
-     *
      * @param array<string, array<string, mixed>> $corrections hexId => customFields
      * @throws DbalException|\JsonException
      */

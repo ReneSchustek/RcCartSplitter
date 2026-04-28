@@ -63,6 +63,16 @@ composer quality      # Alle Checks (cs-check + phpstan + test)
 
 CI läuft automatisch bei Push und Pull Requests via GitHub Actions.
 
+### Integration-Tests
+
+Tests in `tests/Integration/` sichern den Korrektur-Pfad gegen eine echte Shopware-Test-Datenbank (DBAL-Batch-UPDATE auf `order_line_item.custom_fields`). Sie laufen ausschliesslich in einer Plattform-Test-Umgebung mit gesetztem `KERNEL_CLASS`:
+
+```bash
+KERNEL_CLASS=Shopware\\Core\\Kernel vendor/bin/phpunit --testsuite=Integration
+```
+
+Ohne Bootstrap überspringen die Tests sich selbst — `composer test` führt nur die Unit-Suite aus.
+
 ## Lizenz
 
 Proprietär – siehe [composer.json](composer.json).
