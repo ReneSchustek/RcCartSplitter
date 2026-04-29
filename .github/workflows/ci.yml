@@ -38,6 +38,12 @@ jobs:
       - name: Code-Style prüfen
         run: composer cs-check
 
+      - name: XML-Lint (services.xml und Co.)
+        run: composer lint:xml
+
+      - name: Twig-Lint (Storefront-Templates, Lexer-only)
+        run: composer lint:twig
+
       - name: Statische Analyse (PHPStan Level 8)
         run: composer phpstan
 

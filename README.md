@@ -103,7 +103,16 @@ composer test         # Unit-Tests ausführen
 composer phpstan      # Statische Analyse (Level 8)
 composer cs-check     # Code-Style prüfen (PSR-12)
 composer cs-fix       # Code-Style automatisch korrigieren
-composer quality      # Alle Checks (cs-check + phpstan + test)
+composer lint:xml     # services.xml und Co. auf well-formed prüfen (PHP-DOM)
+composer lint:twig    # Storefront-Templates über Twig-Lexer prüfen (Syntax)
+composer quality      # Alle Checks (cs-check + lint:xml + lint:twig + phpstan + test)
+```
+
+`composer lint:twig` arbeitet ohne Plattform-Boot und prüft daher nur die Twig-Syntax (Lexer-Stufe). Tag- und Filter-Existenz (`sw_extends`, `sw_sanitize`, `sw_icon`) wird auf der DevBox bzw. in der Plattform-CI mit dem voll gebooteten Konsolen-Befehl gegenvalidiert:
+
+```bash
+bin/console lint:twig src/Resources/views
+bin/console lint:xml  src/Resources/config
 ```
 
 CI läuft automatisch bei Push und Pull Requests via GitHub Actions.

@@ -43,8 +43,12 @@
         "phpstan": "vendor/bin/phpstan analyse --memory-limit=512M",
         "cs-fix": "vendor/bin/php-cs-fixer fix",
         "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff",
+        "lint:twig": "php bin/lint-twig.php",
+        "lint:xml": "php bin/lint-xml.php",
         "quality": [
             "@cs-check",
+            "@lint:xml",
+            "@lint:twig",
             "@phpstan",
             "@test"
         ]
