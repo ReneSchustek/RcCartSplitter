@@ -78,8 +78,20 @@ Seit dem 28. Juni 2025 verlangt das BFSG für B2C-Shops WCAG 2.2 AA. Dieses Plug
 ### Vom Plugin abgedeckt
 
 - Semantische `<dl>/<dt>/<dd>`-Struktur für Begriff-Wert-Paare statt `<ul>/<li>/<strong>` (WCAG 1.3.1 — Beziehungen)
+- Programmatischer Gruppenkontext über `aria-label="{{ 'rc-cart-splitter.lineItemInputs'|trans|sw_sanitize }}"` an der `<dl>` (Snippets DE/EN unter `src/Resources/snippet/`, WCAG 1.3.1)
 - Bootstrap-Token `text-body-secondary` statt `text-muted` (WCAG 1.4.3 — dokumentierter Kontrast)
 - Maximale Feldzahl zentral aus `TmmsConstants::INPUT_COUNT`, kein Drift zwischen PHP/JS/Twig
+
+### Kontrast-Baseline (Bootstrap 5.3 Default)
+
+`text-body-secondary` löst sich in Bootstrap 5.3 zu `rgba(var(--bs-body-color-rgb), 0.75)` auf. Mit dem Default `--bs-body-color-rgb: 33, 37, 41` ergibt sich nach Alpha-Komposition über weißem Hintergrund die effektive Farbe `rgb(88, 92, 94)`:
+
+| Hintergrund | effektives Verhältnis | WCAG-AA (kleiner Text) |
+|---|---|---|
+| `#ffffff` (Card-/Body-Default) | 6.76:1 | bestanden |
+| `#f8f9fa` (`--bs-tertiary-bg`) | 6.41:1 | bestanden |
+
+Im Default-Theme ist die 4.5:1-Schwelle deutlich erfüllt. Im produktiven Theme kann der Wert durch eigene `--bs-body-color`- oder Card-Background-Overrides abweichen — der finale Live-Theme-Spotcheck (Mini-Cart, Cart-Page, Confirm-Page) ist als manueller Schritt mit `axe DevTools` / Lighthouse oder `llama3.2-vision` separat zu fahren und unter `.ai/reviews/` zu archivieren.
 
 ### Theme-/Storefront-Pflicht
 
