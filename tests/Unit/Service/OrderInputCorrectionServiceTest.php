@@ -58,13 +58,13 @@ final class OrderInputCorrectionServiceTest extends TestCase
 
         $itemA = $this->createLineItem($idA, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            'rcTmmsField1Value' => '100cm',
-            'rcTmmsField1Label' => 'Laenge',
+            self::payloadValueKey(1) => '100cm',
+            self::payloadLabelKey(1) => 'Laenge',
         ]);
         $itemB = $this->createLineItem($idB, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            'rcTmmsField1Value' => '200cm',
-            'rcTmmsField1Label' => 'Laenge',
+            self::payloadValueKey(1) => '200cm',
+            self::payloadLabelKey(1) => 'Laenge',
         ]);
 
         $fresh = new OrderLineItemCollection([$itemA, $itemB]);
@@ -111,7 +111,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $id = Uuid::randomHex();
         $item = $this->createLineItem($id, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            'rcTmmsField1Value' => '100cm',
+            self::payloadValueKey(1) => '100cm',
         ]);
         $fresh = new OrderLineItemCollection([$item]);
 
@@ -141,7 +141,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $id = Uuid::randomHex();
         $fresh = $this->createLineItem($id, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            'rcTmmsField1Value' => '100cm',
+            self::payloadValueKey(1) => '100cm',
         ]);
         $memory = $this->createLineItem($id, payload: []);
 
@@ -173,10 +173,10 @@ final class OrderInputCorrectionServiceTest extends TestCase
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            'rcTmmsField1Value' => '100cm',
-            'rcTmmsField1Label' => 'Laenge',
-            'rcTmmsField2Value' => 'rot',
-            'rcTmmsField2Label' => 'Farbe',
+            self::payloadValueKey(1) => '100cm',
+            self::payloadLabelKey(1) => 'Laenge',
+            self::payloadValueKey(2) => 'rot',
+            self::payloadLabelKey(2) => 'Farbe',
         ];
 
         $result = $this->service->buildFromPayloadKeys($payload, []);
@@ -193,8 +193,8 @@ final class OrderInputCorrectionServiceTest extends TestCase
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            'rcTmmsField1Value' => '100cm',
-            'rcTmmsField1Label' => 'Laenge',
+            self::payloadValueKey(1) => '100cm',
+            self::payloadLabelKey(1) => 'Laenge',
         ];
 
         $existingFields = ['some_other_field' => 'value'];
@@ -211,8 +211,8 @@ final class OrderInputCorrectionServiceTest extends TestCase
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            'rcTmmsField1Value' => '100cm',
-            'rcTmmsField1Label' => 'Laenge',
+            self::payloadValueKey(1) => '100cm',
+            self::payloadLabelKey(1) => 'Laenge',
         ];
 
         $result = $this->service->buildFromPayloadKeys($payload, []);
@@ -332,5 +332,15 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $entity->setCustomFields([]);
 
         return $entity;
+    }
+
+    private static function payloadValueKey(int $i): string
+    {
+        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
+    }
+
+    private static function payloadLabelKey(int $i): string
+    {
+        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_LABEL_SUFFIX;
     }
 }

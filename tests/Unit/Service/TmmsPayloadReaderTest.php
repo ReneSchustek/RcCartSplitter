@@ -41,7 +41,7 @@ final class TmmsPayloadReaderTest extends TestCase
             'lineItems' => [
                 'product-123' => [
                     'payload' => [
-                        'rcTmmsField1Value' => 'Wert',
+                        self::payloadValueKey(1) => 'Wert',
                     ],
                 ],
             ],
@@ -60,10 +60,10 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        'rcTmmsField1Value' => ' 100cm ',
-                        'rcTmmsField1Label' => ' Laenge ',
-                        'rcTmmsField2Value' => 'rot',
-                        'rcTmmsField2Label' => 'Farbe',
+                        self::payloadValueKey(1) => ' 100cm ',
+                        self::payloadLabelKey(1) => ' Laenge ',
+                        self::payloadValueKey(2) => 'rot',
+                        self::payloadLabelKey(2) => 'Farbe',
                     ],
                 ],
             ],
@@ -72,10 +72,10 @@ final class TmmsPayloadReaderTest extends TestCase
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
         self::assertSame('1', $result[TmmsConstants::PAYLOAD_TMMS_ACTIVE]);
-        self::assertSame('100cm', $result['rcTmmsField1Value']);
-        self::assertSame('Laenge', $result['rcTmmsField1Label']);
-        self::assertSame('rot', $result['rcTmmsField2Value']);
-        self::assertSame('Farbe', $result['rcTmmsField2Label']);
+        self::assertSame('100cm', $result[self::payloadValueKey(1)]);
+        self::assertSame('Laenge', $result[self::payloadLabelKey(1)]);
+        self::assertSame('rot', $result[self::payloadValueKey(2)]);
+        self::assertSame('Farbe', $result[self::payloadLabelKey(2)]);
     }
 
     #[Test]
@@ -86,10 +86,10 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        'rcTmmsField1Value' => '100cm',
-                        'rcTmmsField1Label' => 'Laenge',
-                        'rcTmmsField2Value' => '',
-                        'rcTmmsField2Label' => 'Leer',
+                        self::payloadValueKey(1) => '100cm',
+                        self::payloadLabelKey(1) => 'Laenge',
+                        self::payloadValueKey(2) => '',
+                        self::payloadLabelKey(2) => 'Leer',
                     ],
                 ],
             ],
@@ -97,9 +97,9 @@ final class TmmsPayloadReaderTest extends TestCase
 
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
-        self::assertArrayHasKey('rcTmmsField1Value', $result);
-        self::assertArrayNotHasKey('rcTmmsField2Value', $result);
-        self::assertArrayNotHasKey('rcTmmsField2Label', $result);
+        self::assertArrayHasKey(self::payloadValueKey(1), $result);
+        self::assertArrayNotHasKey(self::payloadValueKey(2), $result);
+        self::assertArrayNotHasKey(self::payloadLabelKey(2), $result);
     }
 
     #[Test]
@@ -110,8 +110,8 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        'rcTmmsField1Value' => '<script>alert("xss")</script>100cm',
-                        'rcTmmsField1Label' => '<b>Laenge</b>',
+                        self::payloadValueKey(1) => '<script>alert("xss")</script>100cm',
+                        self::payloadLabelKey(1) => '<b>Laenge</b>',
                     ],
                 ],
             ],
@@ -119,8 +119,8 @@ final class TmmsPayloadReaderTest extends TestCase
 
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
-        self::assertSame('alert("xss")100cm', $result['rcTmmsField1Value']);
-        self::assertSame('Laenge', $result['rcTmmsField1Label']);
+        self::assertSame('alert("xss")100cm', $result[self::payloadValueKey(1)]);
+        self::assertSame('Laenge', $result[self::payloadLabelKey(1)]);
     }
 
     #[Test]
@@ -131,7 +131,7 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-999' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        'rcTmmsField1Value' => '100cm',
+                        self::payloadValueKey(1) => '100cm',
                     ],
                 ],
             ],
@@ -181,9 +181,9 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        'rcTmmsField1Value' => ['nested' => 'array'],
-                        'rcTmmsField2Value' => '50cm',
-                        'rcTmmsField2Label' => ['also' => 'array'],
+                        self::payloadValueKey(1) => ['nested' => 'array'],
+                        self::payloadValueKey(2) => '50cm',
+                        self::payloadLabelKey(2) => ['also' => 'array'],
                     ],
                 ],
             ],
@@ -191,9 +191,9 @@ final class TmmsPayloadReaderTest extends TestCase
 
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
-        self::assertArrayNotHasKey('rcTmmsField1Value', $result);
-        self::assertSame('50cm', $result['rcTmmsField2Value']);
-        self::assertSame('', $result['rcTmmsField2Label']);
+        self::assertArrayNotHasKey(self::payloadValueKey(1), $result);
+        self::assertSame('50cm', $result[self::payloadValueKey(2)]);
+        self::assertSame('', $result[self::payloadLabelKey(2)]);
     }
 
     #[Test]
@@ -205,8 +205,8 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        'rcTmmsField1Value' => $longValue,
-                        'rcTmmsField1Label' => 'Laenge',
+                        self::payloadValueKey(1) => $longValue,
+                        self::payloadLabelKey(1) => 'Laenge',
                     ],
                 ],
             ],
@@ -214,9 +214,9 @@ final class TmmsPayloadReaderTest extends TestCase
 
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
-        self::assertArrayHasKey('rcTmmsField1Value', $result);
+        self::assertArrayHasKey(self::payloadValueKey(1), $result);
         // Sanitization-Layer kappt bei MAX_VALUE_LENGTH (2000)
-        self::assertSame(2000, mb_strlen($result['rcTmmsField1Value']));
+        self::assertSame(2000, mb_strlen($result[self::payloadValueKey(1)]));
     }
 
     // --- readSessionData ---
@@ -236,13 +236,13 @@ final class TmmsPayloadReaderTest extends TestCase
     public function readSessionDataExtractsFieldsCorrectly(): void
     {
         $sessionData = [
-            'tmms_customer_input_1_SW10001' => [
+            self::sessionKey(1, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => '100cm',
                 TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
                 TmmsConstants::SESSION_PLACEHOLDER_KEY => 'z.B. 100cm',
                 TmmsConstants::SESSION_FIELDTYPE_KEY => 'text',
             ],
-            'tmms_customer_input_2_SW10001' => [
+            self::sessionKey(2, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => 'rot',
                 TmmsConstants::SESSION_LABEL_KEY => 'Farbe',
             ],
@@ -267,11 +267,11 @@ final class TmmsPayloadReaderTest extends TestCase
     public function readSessionDataSkipsEmptyValues(): void
     {
         $sessionData = [
-            'tmms_customer_input_1_SW10001' => [
+            self::sessionKey(1, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => '',
                 TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
             ],
-            'tmms_customer_input_2_SW10001' => [
+            self::sessionKey(2, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => 'rot',
                 TmmsConstants::SESSION_LABEL_KEY => 'Farbe',
             ],
@@ -290,5 +290,20 @@ final class TmmsPayloadReaderTest extends TestCase
         self::assertCount(1, $result);
         self::assertArrayNotHasKey(1, $result);
         self::assertArrayHasKey(2, $result);
+    }
+
+    private static function payloadValueKey(int $i): string
+    {
+        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
+    }
+
+    private static function payloadLabelKey(int $i): string
+    {
+        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_LABEL_SUFFIX;
+    }
+
+    private static function sessionKey(int $i, string $productNumber): string
+    {
+        return TmmsConstants::SESSION_KEY_PREFIX . $i . '_' . $productNumber;
     }
 }

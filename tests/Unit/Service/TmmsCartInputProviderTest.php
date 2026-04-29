@@ -73,8 +73,8 @@ final class TmmsCartInputProviderTest extends TestCase
                 $productId => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        'rcTmmsField1Value' => '100cm',
-                        'rcTmmsField1Label' => 'Laenge',
+                        self::payloadValueKey(1) => '100cm',
+                        self::payloadLabelKey(1) => 'Laenge',
                     ],
                 ],
             ],
@@ -90,8 +90,8 @@ final class TmmsCartInputProviderTest extends TestCase
         $result = $this->provider->provide($event);
 
         self::assertSame('1', $result[TmmsConstants::PAYLOAD_TMMS_ACTIVE]);
-        self::assertSame('100cm', $result['rcTmmsField1Value']);
-        self::assertSame('Laenge', $result['rcTmmsField1Label']);
+        self::assertSame('100cm', $result[self::payloadValueKey(1)]);
+        self::assertSame('Laenge', $result[self::payloadLabelKey(1)]);
     }
 
     #[Test]
@@ -100,7 +100,7 @@ final class TmmsCartInputProviderTest extends TestCase
         $productHexId = Uuid::randomHex();
         $request = new Request();
         $session = new Session(new MockArraySessionStorage());
-        $session->set('tmms_customer_input_1_SW10001', [
+        $session->set(self::sessionKey(1, 'SW10001'), [
             TmmsConstants::SESSION_VALUE_KEY => '50cm',
             TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
         ]);
@@ -177,5 +177,20 @@ final class TmmsCartInputProviderTest extends TestCase
             $cart,
             $this->createMock(SalesChannelContext::class),
         );
+    }
+
+    private static function payloadValueKey(int $i): string
+    {
+        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
+    }
+
+    private static function payloadLabelKey(int $i): string
+    {
+        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_LABEL_SUFFIX;
+    }
+
+    private static function sessionKey(int $i, string $productNumber): string
+    {
+        return TmmsConstants::SESSION_KEY_PREFIX . $i . '_' . $productNumber;
     }
 }
