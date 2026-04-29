@@ -1,3 +1,14 @@
+# 1.2.0
+
+- Added: Screen-reader group context on the customer-inputs list via `aria-label` — new snippets in German and English (WCAG 1.3.1)
+- Improved: Correction service narrowed to one public method and sealed (final) — slim interface for clean tests and extensions (DIP/FCoI)
+- Improved: Defensive cap (500 positions) when loading order line items for correction, hardened validation of session data against type manipulation, DB hiccups during AddToCart are now logged
+- Improved: Dedicated logging channel `rc_cart_splitter`, correction errors now write the full stack trace instead of just the message
+- Improved: Local quality gate also checks Twig syntax and XML well-formedness, CI runs PHPUnit with pcov coverage and a threshold gate (services 80 %, subscribers 60 %)
+- Improved: README extended with architecture notes for the two DBAL exceptions, a "further suffix plugins" how-to and the BFSG contrast baseline (6.76:1 against white — well above the WCAG-AA threshold)
+- Improved: More descriptive variable names in the LineItem ID computation in the storefront JavaScript
+- Fixed: PHPUnit runs without an active coverage driver no longer abort — coverage configuration now lives only in `composer coverage`
+
 # 1.1.0
 
 - Improved: Correction of `order_line_item.custom_fields` runs as a single batch CASE-WHEN-UPDATE inside one transaction instead of N round-trips
