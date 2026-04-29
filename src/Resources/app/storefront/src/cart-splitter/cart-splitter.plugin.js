@@ -211,38 +211,39 @@ export default class CartSplitterPlugin extends Plugin {
     }
 
     _computeId(values, suffixes) {
-        const parts = [];
+        const hashSegments = [];
 
         if (suffixes) {
-            parts.push(suffixes);
+            hashSegments.push(suffixes);
         }
 
         values.forEach((v, i) => {
             if (v !== '') {
-                parts.push('f' + i + '=' + v);
+                hashSegments.push('f' + i + '=' + v);
             }
         });
 
-        const hashInput = parts.join('\x00');
-        const h1 = this._fnv32a(hashInput);
-        const h2 = this._fnv32a(this._productId + hashInput);
+        const hashInput = hashSegments.join('\x00');
+        const valueHash = this._fnv32a(hashInput);
+        const productScopedHash = this._fnv32a(this._productId + hashInput);
 
-        const h1Hex = h1.toString(16).padStart(8, '0');
-        const h2Hex = h2.toString(16).padStart(8, '0');
+        const valueHashHex = valueHash.toString(16).padStart(8, '0');
+        const productScopedHashHex = productScopedHash.toString(16).padStart(8, '0');
 
-        const productHex = this._productId.replace(/-/g, '');
-        const newHex = productHex.substring(0, 16) + h1Hex + h2Hex;
+        const productSegment = this._productId.replace(/-/g, '');
+        const combinedUuid = productSegment.substring(0, 16) + valueHashHex + productScopedHashHex;
 
         return [
-            newHex.substring(0, 8),
-            newHex.substring(8, 12),
-            newHex.substring(12, 16),
-            newHex.substring(16, 20),
-            newHex.substring(20, 32),
+            combinedUuid.substring(0, 8),
+            combinedUuid.substring(8, 12),
+            combinedUuid.substring(12, 16),
+            combinedUuid.substring(16, 20),
+            combinedUuid.substring(20, 32),
         ].join('-');
     }
 
     _fnv32a(str) {
+        // FNV-1a 32-Bit: deterministisch und kollisionsarm bei kurzen Strings, ohne Crypto-API im Browser nutzbar.
         let hash = 0x811c9dc5;
         for (let i = 0; i < str.length; i++) {
             hash ^= str.charCodeAt(i);
