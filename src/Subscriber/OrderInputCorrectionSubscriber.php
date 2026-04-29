@@ -61,6 +61,9 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('orderId', $orderId));
+        // Defensive Obergrenze: B2B-Bestellungen mit Tausenden Positionen sollen nicht den
+        // Checkout-Subscriber sprengen. 500 deckt jeden realistischen Fall ab.
+        $criteria->setLimit(500);
 
         /** @var OrderLineItemCollection $collection */
         $collection = $this->orderLineItemRepository->search($criteria, $context)->getEntities();

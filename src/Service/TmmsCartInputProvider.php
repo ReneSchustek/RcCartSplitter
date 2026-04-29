@@ -6,6 +6,7 @@ namespace Ruhrcoder\RcCartSplitter\Service;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception as DbalException;
+use Psr\Log\LoggerInterface;
 use Ruhrcoder\RcCartSplitter\TmmsConstants;
 use Shopware\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -19,6 +20,7 @@ final class TmmsCartInputProvider implements CartInputProviderInterface
         private readonly RequestStack $requestStack,
         private readonly Connection $connection,
         private readonly TmmsPayloadReader $payloadReader,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -65,7 +67,12 @@ final class TmmsCartInputProvider implements CartInputProviderInterface
                 'SELECT product_number FROM product WHERE id = :id LIMIT 1',
                 ['id' => Uuid::fromHexToBytes($productId)],
             );
-        } catch (DbalException) {
+        } catch (DbalException $e) {
+            // DB-Hiccup darf AddToCart nicht killen, aber wir wollen den Fall sehen
+            $this->logger->warning('TMMS-Cart-Provider konnte product_number nicht laden', [
+                'productId' => $productId,
+                'exception' => $e,
+            ]);
             return null;
         }
 

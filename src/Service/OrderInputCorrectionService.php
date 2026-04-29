@@ -47,10 +47,11 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
             });
         } catch (DbalException|\JsonException $e) {
             // Cosmetic-Fix darf den Checkout nicht killen — Fehler aggregiert loggen und abbrechen.
+            // Exception-Objekt statt -message: Monolog ergaenzt Stack-Trace fuer Root-Cause.
             $this->logger->error('TMMS-Korrektur fehlgeschlagen', [
                 'lineItemIds' => array_keys($corrections),
                 'count' => count($corrections),
-                'exception' => $e->getMessage(),
+                'exception' => $e,
             ]);
             return;
         }

@@ -13,6 +13,7 @@
         <service id="Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectionService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="logger"/>
+            <tag name="monolog.logger" channel="rc_cart_splitter"/>
         </service>
 
         <service id="Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectorInterface"
@@ -24,7 +25,9 @@
             <argument type="service" id="request_stack"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Ruhrcoder\RcCartSplitter\Service\TmmsPayloadReader"/>
+            <argument type="service" id="logger"/>
             <tag name="rc_cart_splitter.input_provider"/>
+            <tag name="monolog.logger" channel="rc_cart_splitter"/>
         </service>
 
         <!-- Subscriber -->

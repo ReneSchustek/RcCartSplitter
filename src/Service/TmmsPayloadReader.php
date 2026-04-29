@@ -63,14 +63,18 @@ final class TmmsPayloadReader
                 continue;
             }
 
-            /** @var array<string, string> $data */
             $data = $session->get($key, []);
-            $value = $data[TmmsConstants::SESSION_VALUE_KEY] ?? '';
-
-            if ($value === '') {
+            // Manipulierte Session darf den nachfolgenden Array-Zugriff nicht sprengen
+            if (!is_array($data)) {
                 continue;
             }
 
+            $value = $data[TmmsConstants::SESSION_VALUE_KEY] ?? '';
+            if (!is_string($value) || $value === '') {
+                continue;
+            }
+
+            /** @var array<string, string> $data */
             $inputs[$i] = $data;
         }
 

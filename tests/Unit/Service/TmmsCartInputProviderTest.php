@@ -10,6 +10,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Ruhrcoder\RcCartSplitter\Service\TmmsCartInputProvider;
 use Ruhrcoder\RcCartSplitter\Service\TmmsPayloadReader;
 use Ruhrcoder\RcCartSplitter\TmmsConstants;
@@ -30,6 +32,7 @@ final class TmmsCartInputProviderTest extends TestCase
     private RequestStack $requestStack;
     private Connection&MockObject $connection;
     private TmmsPayloadReader $payloadReader;
+    private LoggerInterface $logger;
     private TmmsCartInputProvider $provider;
 
     protected function setUp(): void
@@ -37,11 +40,14 @@ final class TmmsCartInputProviderTest extends TestCase
         $this->requestStack = new RequestStack();
         $this->connection = $this->createMock(Connection::class);
         $this->payloadReader = new TmmsPayloadReader();
+        // NullLogger fuer Default — Tests, die das Warning verifizieren wollen, ueberschreiben das.
+        $this->logger = new NullLogger();
 
         $this->provider = new TmmsCartInputProvider(
             $this->requestStack,
             $this->connection,
             $this->payloadReader,
+            $this->logger,
         );
     }
 
