@@ -45,6 +45,8 @@
         "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff",
         "lint:twig": "php bin/lint-twig.php",
         "lint:xml": "php bin/lint-xml.php",
+        "coverage": "vendor/bin/phpunit --coverage-clover coverage.xml --coverage-text",
+        "coverage:gate": "php bin/coverage-gate.php",
         "quality": [
             "@cs-check",
             "@lint:xml",

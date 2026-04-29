@@ -20,6 +20,7 @@ jobs:
         with:
           php-version: '8.3'
           extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, curl, zip
+          coverage: pcov
           tools: composer:v2
 
       - name: Composer-Cache laden
@@ -47,5 +48,16 @@ jobs:
       - name: Statische Analyse (PHPStan Level 8)
         run: composer phpstan
 
-      - name: Tests ausführen
-        run: composer test
+      - name: Tests mit Coverage ausführen
+        run: composer coverage
+
+      - name: Coverage-Schwellen prüfen
+        run: composer coverage:gate
+
+      - name: Coverage-Report als Artefakt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-clover
+          path: coverage.xml
+          if-no-files-found: warn

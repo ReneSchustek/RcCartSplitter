@@ -105,8 +105,17 @@ composer cs-check     # Code-Style prüfen (PSR-12)
 composer cs-fix       # Code-Style automatisch korrigieren
 composer lint:xml     # services.xml und Co. auf well-formed prüfen (PHP-DOM)
 composer lint:twig    # Storefront-Templates über Twig-Lexer prüfen (Syntax)
+composer coverage     # PHPUnit mit Clover-Coverage-Report (coverage.xml)
+composer coverage:gate # Aggregat-Coverage gegen Schwellen prüfen
 composer quality      # Alle Checks (cs-check + lint:xml + lint:twig + phpstan + test)
 ```
+
+`composer coverage` setzt einen aktiven Coverage-Treiber voraus (`pcov` empfohlen, alternativ `xdebug` mit `XDEBUG_MODE=coverage`). Aggregat-Coverage-Schwellen werden in `bin/coverage-gate.php` gepflegt:
+
+- `src/Service/`: ≥ 80 % Line-Coverage
+- `src/Subscriber/`: ≥ 60 % Line-Coverage
+
+CI ruft `composer coverage` und anschließend `composer coverage:gate`; ein Schwellen-Verstoß bricht den Build. Der Clover-Report wird als Workflow-Artefakt hochgeladen.
 
 `composer lint:twig` arbeitet ohne Plattform-Boot und prüft daher nur die Twig-Syntax (Lexer-Stufe). Tag- und Filter-Existenz (`sw_extends`, `sw_sanitize`, `sw_icon`) wird auf der DevBox bzw. in der Plattform-CI mit dem voll gebooteten Konsolen-Befehl gegenvalidiert:
 
