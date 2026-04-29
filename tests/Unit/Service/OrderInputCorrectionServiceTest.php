@@ -158,18 +158,10 @@ final class OrderInputCorrectionServiceTest extends TestCase
         self::assertSame('100cm', $memory->getCustomFields()['tmms_customer_input_1_value'] ?? null);
     }
 
-    // --- buildFromPayloadKeys ---
+    // --- correctLineItems: Mapping aus Payload-Schluesseln ---
 
     #[Test]
-    public function buildFromPayloadKeysReturnsNullWhenTmmsNotActive(): void
-    {
-        $result = $this->service->buildFromPayloadKeys([], []);
-
-        self::assertNull($result);
-    }
-
-    #[Test]
-    public function buildFromPayloadKeysMapsAllFields(): void
+    public function correctLineItemsWritesPayloadFieldsToCustomFields(): void
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
@@ -179,17 +171,17 @@ final class OrderInputCorrectionServiceTest extends TestCase
             self::payloadLabelKey(2) => 'Farbe',
         ];
 
-        $result = $this->service->buildFromPayloadKeys($payload, []);
+        $customFields = $this->captureWrittenCustomFields($payload);
 
-        self::assertNotNull($result);
-        self::assertSame('100cm', $result['tmms_customer_input_1_value']);
-        self::assertSame('Laenge', $result['tmms_customer_input_1_label']);
-        self::assertSame('rot', $result['tmms_customer_input_2_value']);
-        self::assertSame('Farbe', $result['tmms_customer_input_2_label']);
+        self::assertNotNull($customFields);
+        self::assertSame('100cm', $customFields['tmms_customer_input_1_value']);
+        self::assertSame('Laenge', $customFields['tmms_customer_input_1_label']);
+        self::assertSame('rot', $customFields['tmms_customer_input_2_value']);
+        self::assertSame('Farbe', $customFields['tmms_customer_input_2_label']);
     }
 
     #[Test]
-    public function buildFromPayloadKeysPreservesExistingCustomFields(): void
+    public function correctLineItemsPreservesExistingCustomFieldsFromPayload(): void
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
@@ -197,17 +189,15 @@ final class OrderInputCorrectionServiceTest extends TestCase
             self::payloadLabelKey(1) => 'Laenge',
         ];
 
-        $existingFields = ['some_other_field' => 'value'];
+        $customFields = $this->captureWrittenCustomFields($payload, ['some_other_field' => 'value']);
 
-        $result = $this->service->buildFromPayloadKeys($payload, $existingFields);
-
-        self::assertNotNull($result);
-        self::assertSame('value', $result['some_other_field']);
-        self::assertSame('100cm', $result['tmms_customer_input_1_value']);
+        self::assertNotNull($customFields);
+        self::assertSame('value', $customFields['some_other_field']);
+        self::assertSame('100cm', $customFields['tmms_customer_input_1_value']);
     }
 
     #[Test]
-    public function buildFromPayloadKeysSetsEmptyStringForMissingFields(): void
+    public function correctLineItemsSetsEmptyStringForMissingPayloadFields(): void
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
@@ -215,47 +205,31 @@ final class OrderInputCorrectionServiceTest extends TestCase
             self::payloadLabelKey(1) => 'Laenge',
         ];
 
-        $result = $this->service->buildFromPayloadKeys($payload, []);
+        $customFields = $this->captureWrittenCustomFields($payload);
 
-        self::assertNotNull($result);
-        // Feld 2-5 sollten leer sein
-        self::assertSame('', $result['tmms_customer_input_2_value']);
-        self::assertSame('', $result['tmms_customer_input_2_label']);
-        self::assertSame('', $result['tmms_customer_input_5_value']);
+        self::assertNotNull($customFields);
+        // Felder 2..INPUT_COUNT sind leer befuellt
+        self::assertSame('', $customFields['tmms_customer_input_2_value']);
+        self::assertSame('', $customFields['tmms_customer_input_2_label']);
+        self::assertSame('', $customFields['tmms_customer_input_5_value']);
     }
 
-    // --- buildFromSessionData ---
+    // --- correctLineItems: Mapping aus Session-Daten ---
 
     #[Test]
-    public function buildFromSessionDataReturnsNullWhenNoInputs(): void
+    public function correctLineItemsSkipsWhenSessionInputsEmptyArray(): void
     {
-        $result = $this->service->buildFromSessionData([], []);
-
-        self::assertNull($result);
+        $this->expectNoCorrection([TmmsConstants::PAYLOAD_TMMS_INPUTS => []]);
     }
 
     #[Test]
-    public function buildFromSessionDataReturnsNullWhenInputsEmpty(): void
+    public function correctLineItemsSkipsWhenSessionInputsNotArray(): void
     {
-        $payload = [TmmsConstants::PAYLOAD_TMMS_INPUTS => []];
-
-        $result = $this->service->buildFromSessionData($payload, []);
-
-        self::assertNull($result);
+        $this->expectNoCorrection([TmmsConstants::PAYLOAD_TMMS_INPUTS => 'invalid']);
     }
 
     #[Test]
-    public function buildFromSessionDataReturnsNullWhenInputsNotArray(): void
-    {
-        $payload = [TmmsConstants::PAYLOAD_TMMS_INPUTS => 'invalid'];
-
-        $result = $this->service->buildFromSessionData($payload, []);
-
-        self::assertNull($result);
-    }
-
-    #[Test]
-    public function buildFromSessionDataMapsAllSessionFields(): void
+    public function correctLineItemsWritesSessionFieldsToCustomFields(): void
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_INPUTS => [
@@ -274,19 +248,19 @@ final class OrderInputCorrectionServiceTest extends TestCase
             ],
         ];
 
-        $result = $this->service->buildFromSessionData($payload, []);
+        $customFields = $this->captureWrittenCustomFields($payload);
 
-        self::assertNotNull($result);
-        self::assertSame('100cm', $result['tmms_customer_input_1_value']);
-        self::assertSame('Laenge', $result['tmms_customer_input_1_label']);
-        self::assertSame('z.B. 100cm', $result['tmms_customer_input_1_placeholder']);
-        self::assertSame('text', $result['tmms_customer_input_1_fieldtype']);
-        self::assertSame('rot', $result['tmms_customer_input_3_value']);
-        self::assertSame('select', $result['tmms_customer_input_3_fieldtype']);
+        self::assertNotNull($customFields);
+        self::assertSame('100cm', $customFields['tmms_customer_input_1_value']);
+        self::assertSame('Laenge', $customFields['tmms_customer_input_1_label']);
+        self::assertSame('z.B. 100cm', $customFields['tmms_customer_input_1_placeholder']);
+        self::assertSame('text', $customFields['tmms_customer_input_1_fieldtype']);
+        self::assertSame('rot', $customFields['tmms_customer_input_3_value']);
+        self::assertSame('select', $customFields['tmms_customer_input_3_fieldtype']);
     }
 
     #[Test]
-    public function buildFromSessionDataPreservesExistingCustomFields(): void
+    public function correctLineItemsPreservesExistingCustomFieldsFromSession(): void
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_INPUTS => [
@@ -297,17 +271,15 @@ final class OrderInputCorrectionServiceTest extends TestCase
             ],
         ];
 
-        $existingFields = ['existing_key' => 'existing_value'];
+        $customFields = $this->captureWrittenCustomFields($payload, ['existing_key' => 'existing_value']);
 
-        $result = $this->service->buildFromSessionData($payload, $existingFields);
-
-        self::assertNotNull($result);
-        self::assertSame('existing_value', $result['existing_key']);
-        self::assertSame('100cm', $result['tmms_customer_input_1_value']);
+        self::assertNotNull($customFields);
+        self::assertSame('existing_value', $customFields['existing_key']);
+        self::assertSame('100cm', $customFields['tmms_customer_input_1_value']);
     }
 
     #[Test]
-    public function buildFromSessionDataUsesEmptyStringForMissingKeys(): void
+    public function correctLineItemsUsesEmptyStringForMissingSessionKeys(): void
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_INPUTS => [
@@ -315,11 +287,11 @@ final class OrderInputCorrectionServiceTest extends TestCase
             ],
         ];
 
-        $result = $this->service->buildFromSessionData($payload, []);
+        $customFields = $this->captureWrittenCustomFields($payload);
 
-        self::assertNotNull($result);
-        self::assertSame('', $result['tmms_customer_input_1_value']);
-        self::assertSame('', $result['tmms_customer_input_1_label']);
+        self::assertNotNull($customFields);
+        self::assertSame('', $customFields['tmms_customer_input_1_value']);
+        self::assertSame('', $customFields['tmms_customer_input_1_label']);
     }
 
     /** @param array<string, mixed> $payload */
@@ -332,6 +304,59 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $entity->setCustomFields([]);
 
         return $entity;
+    }
+
+    /**
+     * Black-Box-Aufruf von correctLineItems mit einem Single-Item-Setup. Faengt das
+     * via DBAL geschriebene customFields-JSON ab und gibt es decodiert zurueck.
+     * Liefert null, wenn kein UPDATE stattfand (Service hat die Korrektur uebersprungen).
+     *
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed> $existingCustomFields
+     * @return array<string, mixed>|null
+     */
+    private function captureWrittenCustomFields(array $payload, array $existingCustomFields = []): ?array
+    {
+        $hexId = Uuid::randomHex();
+        $item = $this->createLineItem($hexId, payload: $payload);
+        $item->setCustomFields($existingCustomFields);
+        $fresh = new OrderLineItemCollection([$item]);
+
+        $this->connection
+            ->method('transactional')
+            ->willReturnCallback(fn (\Closure $cb): mixed => $cb($this->connection));
+
+        $captured = null;
+        $this->connection
+            ->method('executeStatement')
+            ->willReturnCallback(function (string $sql, array $params) use (&$captured): int {
+                /** @var array<string, mixed> $decoded */
+                $decoded = json_decode((string) $params['cf_0'], true, flags: \JSON_THROW_ON_ERROR);
+                $captured = $decoded;
+                return 1;
+            });
+
+        $this->service->correctLineItems($fresh, null);
+
+        return $captured;
+    }
+
+    /**
+     * Black-Box-Erwartung: correctLineItems fasst Connection nicht an, weil keine
+     * Korrektur ausgeloest wurde.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function expectNoCorrection(array $payload): void
+    {
+        $hexId = Uuid::randomHex();
+        $item = $this->createLineItem($hexId, payload: $payload);
+        $fresh = new OrderLineItemCollection([$item]);
+
+        $this->connection->expects(self::never())->method('transactional');
+        $this->connection->expects(self::never())->method('executeStatement');
+
+        $this->service->correctLineItems($fresh, null);
     }
 
     private static function payloadValueKey(int $i): string

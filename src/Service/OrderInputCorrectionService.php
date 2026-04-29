@@ -67,7 +67,7 @@ class OrderInputCorrectionService
     }
 
     /** @return array<string, mixed>|null */
-    public function correctSingleItem(OrderLineItemEntity $lineItem): ?array
+    private function correctSingleItem(OrderLineItemEntity $lineItem): ?array
     {
         $payload = $lineItem->getPayload() ?? [];
 
@@ -85,7 +85,7 @@ class OrderInputCorrectionService
      * @param array<string, mixed> $customFields
      * @return array<string, mixed>|null
      */
-    public function buildFromPayloadKeys(array $payload, array $customFields): ?array
+    private function buildFromPayloadKeys(array $payload, array $customFields): ?array
     {
         if (!isset($payload[TmmsConstants::PAYLOAD_TMMS_ACTIVE])) {
             return null;
@@ -109,7 +109,7 @@ class OrderInputCorrectionService
      * @param array<string, mixed> $customFields
      * @return array<string, mixed>|null
      */
-    public function buildFromSessionData(array $payload, array $customFields): ?array
+    private function buildFromSessionData(array $payload, array $customFields): ?array
     {
         $tmmsInputs = $payload[TmmsConstants::PAYLOAD_TMMS_INPUTS] ?? null;
 
