@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Ruhrcoder\RcCartSplitter\Subscriber;
 
-use Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectionService;
+use Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectorInterface;
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Framework\Context;
@@ -21,7 +21,7 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
     /** @param EntityRepository<OrderLineItemCollection> $orderLineItemRepository */
     public function __construct(
         private readonly EntityRepository $orderLineItemRepository,
-        private readonly OrderInputCorrectionService $correctionService,
+        private readonly OrderInputCorrectorInterface $correctionService,
     ) {
     }
 

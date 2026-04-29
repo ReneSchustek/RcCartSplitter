@@ -15,6 +15,9 @@
             <argument type="service" id="logger"/>
         </service>
 
+        <service id="Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectorInterface"
+                 alias="Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectionService"/>
+
         <!-- Cart-Input-Provider (TMMS-Default; weitere Plugins koennen unter dem Tag andocken) -->
 
         <service id="Ruhrcoder\RcCartSplitter\Service\TmmsCartInputProvider">

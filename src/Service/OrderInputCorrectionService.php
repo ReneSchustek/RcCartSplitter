@@ -13,8 +13,7 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /** Korrigiert TMMS-Kundeneingaben in den custom_fields der Bestellpositionen */
-// Nicht-final, damit der Subscriber-Unit-Test die Service-Aufrufe per Mock verifizieren kann.
-class OrderInputCorrectionService
+final class OrderInputCorrectionService implements OrderInputCorrectorInterface
 {
     public function __construct(
         private readonly Connection $connection,

@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectionService;
+use Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectorInterface;
 use Ruhrcoder\RcCartSplitter\Subscriber\OrderInputCorrectionSubscriber;
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
@@ -29,13 +29,13 @@ use Symfony\Component\HttpFoundation\Request;
 final class OrderInputCorrectionSubscriberTest extends TestCase
 {
     private EntityRepository&MockObject $repository;
-    private OrderInputCorrectionService&MockObject $correctionService;
+    private OrderInputCorrectorInterface&MockObject $correctionService;
     private OrderInputCorrectionSubscriber $subscriber;
 
     protected function setUp(): void
     {
         $this->repository = $this->createMock(EntityRepository::class);
-        $this->correctionService = $this->createMock(OrderInputCorrectionService::class);
+        $this->correctionService = $this->createMock(OrderInputCorrectorInterface::class);
 
         $this->subscriber = new OrderInputCorrectionSubscriber(
             $this->repository,
