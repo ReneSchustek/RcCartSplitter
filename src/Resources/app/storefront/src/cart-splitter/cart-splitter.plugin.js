@@ -3,8 +3,9 @@ import Plugin from 'src/plugin-system/plugin.class';
 // TMMS-Felder liegen in eigenen Formularen (ID-Schema productCustomerInputForm-{productId}-{count}) —
 // dieses Plugin sammelt sie pro Produkt, leitet daraus eine deterministische LineItem-ID ab und
 // injiziert die Werte als Hidden-Felder, damit der Cart sie ohne weiteren Round-Trip anzeigen kann.
-// Generisches Suffix-Protokoll: alle form.dataset.rc*Suffix-Attribute fliessen automatisch in den Hash
-// ein — andere Plugins (z. B. RcColorPicker) wirken so ohne Code-Aenderung mit.
+// Suffix-Daten sind generisch (alle form.dataset.rc*Suffix-Attribute fliessen automatisch in den Hash);
+// die Event-Anmeldung in _registerEvents muss aktuell pro Suffix-Plugin erweitert werden.
+// Erweiterungs-Howto: README, Abschnitt "Erweiterung: weitere Suffix-Plugins".
 export default class CartSplitterPlugin extends Plugin {
 
     // Muss mit TmmsConstants::INPUT_COUNT (PHP) uebereinstimmen

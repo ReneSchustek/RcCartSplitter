@@ -40,6 +40,22 @@ php bin/console cache:clear
 
 4. **CheckoutOrderPlacedEvent (OrderInputCorrectionSubscriber):** Korrigiert die custom_fields pro Bestellposition mit den gesicherten Payload-Daten. Ohne diese Korrektur würde TMMS die letzte Eingabe auf alle Positionen desselben Produkts schreiben. Der Schreibvorgang laeuft als einzelnes Batch-CASE-WHEN-UPDATE in einer Transaktion, damit Bestellungen mit vielen Split-Positionen nicht in N Roundtrips zerfallen; DB-Fehler werden geloggt, brechen den Checkout aber nicht ab.
 
+## Erweiterung: weitere Suffix-Plugins
+
+Das Plugin konsumiert generisch alle `data-rc*Suffix`-Attribute am `<form>` über `_collectAllSuffixes()` und mischt sie automatisch in den LineItem-ID-Hash. Die Event-Anmeldung in `_registerEvents` ist hingegen eine hardcodierte Liste (`rcMeterLengthChanged`, `rcColorPickerChanged`). Ein neues Suffix-Plugin muss folgende drei Schritte durchführen:
+
+1. Suffix-Wert am Form setzen:
+   ```js
+   form.dataset.rcMaterialSuffix = 'eiche';
+   ```
+2. Nach jeder Änderung ein eigenes Event dispatchen:
+   ```js
+   form.dispatchEvent(new CustomEvent('rcMaterialChanged', { bubbles: true }));
+   ```
+3. Pull-Request gegen `cart-splitter.plugin.js`, der den Event-Namen in das `_suffixEvents`-Array einfügt. Bis das gemerged ist, läuft die Hash-Neuberechnung erst beim nächsten regulären Input-Event auf einem TMMS-Feld.
+
+**Begründung:** Eine globale Emission (`rcCartSplitter:suffixChanged`) wäre POLS-konformer, erfordert aber Code-Änderungen in allen bestehenden Suffix-Plugins (RcMeterLength, RcColorPicker) und einen Major-Version-Bump. Bewusst nicht jetzt, sondern in einer eigenen Major-Release.
+
 ## Konfiguration
 
 Keine eigene Konfiguration nötig. Das Plugin erkennt TMMS-Eingabefelder automatisch.
