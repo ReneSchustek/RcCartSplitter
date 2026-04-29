@@ -6,9 +6,10 @@
     {% if lineItem.payload.rcTmmsActive is defined %}
         {# Konstante zentral pflegen (PHP/JS halten denselben Wert) #}
         {% set maxFields = constant('Ruhrcoder\\RcCartSplitter\\TmmsConstants::INPUT_COUNT') %}
-        {# dl/dt/dd statt ul/strong: Beziehung Begriff–Wert ist screenreader-relevant (WCAG 1.3.1) #}
+        {# dl/dt/dd plus aria-label: Screenreader bekommen Gruppen-Bezeichnung vor den Begriff-Wert-Paaren (WCAG 1.3.1) #}
         {# text-body-secondary statt text-muted: garantierter Kontrast >= 4.5:1 (WCAG 1.4.3) #}
-        <dl class="rc-cart-splitter-inputs row small text-body-secondary mt-1 mb-0">
+        <dl class="rc-cart-splitter-inputs row small text-body-secondary mt-1 mb-0"
+            aria-label="{{ 'rc-cart-splitter.lineItemInputs'|trans|sw_sanitize }}">
             {% for i in 1..maxFields %}
                 {% set value = lineItem.payload['rcTmmsField' ~ i ~ 'Value']|default('') %}
                 {% set label = lineItem.payload['rcTmmsField' ~ i ~ 'Label']|default('') %}
