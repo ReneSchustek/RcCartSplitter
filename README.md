@@ -44,6 +44,17 @@ php bin/console cache:clear
 
 Keine eigene Konfiguration nötig. Das Plugin erkennt TMMS-Eingabefelder automatisch.
 
+## Architektur-Notizen
+
+### Warum DBAL statt DAL an zwei Stellen
+
+Der Plugin-Standard ist DAL (`EntityRepository`); zwei Stellen weichen bewusst auf DBAL aus:
+
+1. `OrderInputCorrectionService::batchUpdateCustomFields()` schreibt `custom_fields` per Batch-`UPDATE` direkt in die Tabelle `order_line_item`. DAL würde bei jedem Schreibvorgang ein `EntityWrittenEvent` feuern, das TmmsProductCustomerInputs abfängt und unsere Korrektur sofort wieder mit dem Session-Wert überschreibt. DBAL umgeht den Event-Bus. Zusätzlich wird ein einzelnes `CASE id WHEN ... THEN ... END`-Statement in einer Transaktion abgesetzt, damit Bestellungen mit vielen Split-Positionen nicht in N Einzel-Roundtrips zerfallen.
+2. `TmmsCartInputProvider::fetchProductNumber()` liest die `product_number` per Native-`SELECT` aus der `product`-Tabelle. DAL würde die komplette `ProductEntity` inklusive Translations und Associations laden — pro `AddToCart`-Request wäre das unnötig teuer.
+
+Beide Stellen verwenden Parameter-Binding (`Uuid::fromHexToBytes`) und sind durch Unit- und Integration-Tests abgedeckt.
+
 ## Barrierefreiheit (BFSG)
 
 Seit dem 28. Juni 2025 verlangt das BFSG für B2C-Shops WCAG 2.2 AA. Dieses Plugin rendert nur einen kleinen Block unter dem Cart-LineItem; alles andere (Buy-Box, Mini-Cart-Region, Fokus-Stil) liegt beim Storefront-Theme.
