@@ -40,6 +40,7 @@
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
+        "test:js": "node --test tests/Js/cart-splitter.test.mjs",
         "phpstan": "vendor/bin/phpstan analyse --memory-limit=512M",
         "cs-fix": "vendor/bin/php-cs-fixer fix",
         "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff",

@@ -114,6 +114,7 @@ Das Plugin trifft eine Token-Wahl (`text-body-secondary`); die effektive Farbe u
 
 ```bash
 composer test         # Unit-Tests ausführen
+composer test:js      # JS-Unit-Tests für cart-splitter.plugin.js (Node ≥ 18, ohne npm-Dependencies)
 composer phpstan      # Statische Analyse (Level 8)
 composer cs-check     # Code-Style prüfen (PSR-12)
 composer cs-fix       # Code-Style automatisch korrigieren
@@ -139,6 +140,18 @@ bin/console lint:xml  src/Resources/config
 ```
 
 CI läuft automatisch bei Push und Pull Requests via GitHub Actions.
+
+### JS-Unit-Tests
+
+Die Storefront-Logik in `cart-splitter.plugin.js` ist über Node-eigene Test-Tools (`node:test`) abgedeckt. Keine npm-Dependencies, keine `package.json` — der Test-Runner liest die Quelldatei direkt ein, evaluiert sie gegen eine Plugin-Stub-Klasse und prüft `_fnv32a`, `_computeId`, `_collectAllSuffixes`, `_cleanLabel` und `_getTmmsFieldLabel`. Determinismus von FNV-1a ist über öffentliche Referenzwerte (z. B. `0xbf9cf968` für `"foobar"`) belegt.
+
+```bash
+node --test tests/Js/cart-splitter.test.mjs
+# oder:
+composer test:js
+```
+
+CI führt diese Tests in einem eigenen Job (`js-tests`) bei jedem Push und Pull Request aus.
 
 ### Integration-Tests
 

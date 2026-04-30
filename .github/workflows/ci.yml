@@ -61,3 +61,19 @@ jobs:
           name: coverage-clover
           path: coverage.xml
           if-no-files-found: warn
+
+  js-tests:
+    name: JS-Unit-Tests (Storefront-Plugin)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Quellcode auschecken
+        uses: actions/checkout@v5
+
+      - name: Node 22 einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: JS-Unit-Tests ausführen
+        run: node --test tests/Js/cart-splitter.test.mjs
