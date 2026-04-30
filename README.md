@@ -167,6 +167,10 @@ Ohne Bootstrap überspringen die Tests sich selbst — `composer test` führt nu
 
 Vollständige Versions-Historie: [`CHANGELOG_de-DE.md`](CHANGELOG_de-DE.md) (deutsch) bzw. [`CHANGELOG_en-GB.md`](CHANGELOG_en-GB.md) (englisch). Die Dateien folgen der Shopware-Plugin-Manager-Konvention und werden im Admin direkt angezeigt.
 
+## Release-Prozess
+
+Reihenfolge für einen Live-Release (Pre-Release-Checks, DevBox-Sync, Plattform-Lints, BFSG-Live-Spotcheck, GitHub-Push) ist in [`RELEASE.md`](RELEASE.md) konsolidiert.
+
 ## Lizenz
 
 Proprietär – siehe [composer.json](composer.json).

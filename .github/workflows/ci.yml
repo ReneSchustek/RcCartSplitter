@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
 
@@ -77,3 +78,42 @@ jobs:
 
       - name: JS-Unit-Tests ausführen
         run: node --test tests/Js/cart-splitter.test.mjs
+
+  release-readiness:
+    name: Release-Readiness-Gate (Tag-Push)
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Quellcode auschecken
+        uses: actions/checkout@v5
+
+      - name: PHP 8.3 einrichten
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, curl, zip
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Composer-Cache laden
+        uses: actions/cache@v5
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Abhängigkeiten installieren
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Quality-Gate (cs-check + lint:xml + lint:twig + phpstan + test)
+        run: composer quality
+
+      - name: Coverage-Lauf mit pcov
+        run: composer coverage
+
+      - name: Coverage-Schwellen prüfen
+        run: composer coverage:gate
+
+      - name: Security-Audit (Produktiv-Stack)
+        run: composer audit --no-dev
