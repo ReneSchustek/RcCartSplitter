@@ -1,3 +1,8 @@
+# 2.0.1
+
+- Doku: README präzisiert den Detail-Payload-Vertrag (`source`-Pflichtfeld, `suffix` empfohlen, plugin-spezifische Felder unverbindlich) und nennt die Self-Loop-Konvention für Plugins, die das Event sowohl feuern als auch abhören. Naming-Begründung für den neutralen Event-Namespace dokumentiert (vorher nur in interner Notiz).
+- Reine Doku-Klärung, kein Verhaltenswechsel. Patch-Bump.
+
 # 2.0.0
 
 > **Breaking Change.** Das Storefront-JS hört nur noch auf das generische Event `rcSuffixChanged`. Suffix-Plugins müssen dieses Event nach jeder Wert-Änderung mitfeuern; die alte hardcodierte Event-Liste (`rcMeterLengthChanged`, `rcColorPickerChanged`) wird nicht mehr beachtet. Plugin-spezifische Events bleiben für Plugin-interne Listener zulässig.

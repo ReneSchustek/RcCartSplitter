@@ -54,8 +54,11 @@ Das Plugin konsumiert generisch alle `data-rc*Suffix`-Attribute am `<form>` übe
        detail: { source: 'rcMaterial', suffix: 'eiche' },
    }));
    ```
+   `detail.source` ist Pflichtfeld (vendor-eindeutiger Plugin-Name, camelCase). `detail.suffix` ist empfohlen; weitere Felder sind plugin-spezifisch und für Konsumenten unverbindlich. Plugins, die das Event auch selbst abhören, filtern eigene Dispatches per `event.detail?.source !== '<eigene-source>'` (Self-Loop-Schutz).
 
 Der Event-Name ist als statische Konstante `CartSplitterPlugin.SUFFIX_CHANGED_EVENT` exponiert; ein JS-Unit-Test in `tests/Js/cart-splitter.test.mjs` verankert den Vertrag. Plugin-spezifische Events (`rc{Name}Changed`) bleiben für Plugin-interne Listener weiterhin zulässig.
+
+**Warum der neutrale Name** (`rcSuffixChanged`, nicht `rcCartSplitter:suffixChanged`): der Event gehört dem Protokoll, nicht einem einzelnen Plugin. Suffix-Plugins funktionieren so auch in Standalone-Setups ohne RcCartSplitter (No-op-Dispatch ins Leere) und sind nicht namenstechnisch an einen Konsumenten gekoppelt.
 
 ## Konfiguration
 
