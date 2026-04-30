@@ -95,6 +95,8 @@ Im Default-Theme ist die 4.5:1-Schwelle deutlich erfüllt. Im produktiven Theme 
 
 ### Theme-/Storefront-Pflicht
 
+Das Plugin trifft eine Token-Wahl (`text-body-secondary`); die effektive Farbe und der Hintergrund werden vom aktiven Theme bestimmt. Der Live-Theme-Spotcheck (Mini-Cart, Cart-Page, Confirm-Page) liegt deshalb beim Shopbetreiber: einmal bei Inbetriebnahme und erneut nach jedem Theme-Update oder Override von `--bs-body-color` / Card-Hintergrund. Werkzeuge: `axe DevTools`, Lighthouse oder `llama3.2-vision`. Befund unter `.ai/reviews/<datum>-bfsg-kontrast/` archivieren.
+
 - Kontrast ≥ 4.5:1 im aktiven Theme — `text-body-secondary` ist Token-basiert, der finale Wert hängt vom Theme
 - Sichtbarer Fokus auf Buy-Form-Elementen (`:focus-visible`)
 - `<html lang="de">` (oder Sprach-Code des Storefronts)
