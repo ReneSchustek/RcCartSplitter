@@ -40,7 +40,23 @@ git push origin master
 | live-clone (direkte Kopie) | `/workspace/shopware/instances/live-clone/custom/plugins/RcCartSplitter/` |
 | live-latest (direkte Kopie) | `/workspace/shopware/instances/live-latest/custom/plugins/RcCartSplitter/` |
 
-Sync-Befehl (für jedes Ziel einmal aufrufen, Zielpfad nach `cd` anpassen):
+Empfohlene Reihenfolge: Schritte 4 und 5 in einem Aufruf über das lokale Operations-Skript [`scripts/sync-devbox.ps1`](scripts/sync-devbox.ps1) automatisieren. Das Skript synchronisiert alle drei Ziele und ruft je nach `-Build`-Wert den passenden Build-Befehl pro Live-Instanz auf:
+
+```powershell
+# Standard (PHP/Twig-Patch, nur cache:clear je Live-Instanz):
+pwsh ./scripts/sync-devbox.ps1
+
+# Migration: zusätzlich plugin:update RcCartSplitter
+pwsh ./scripts/sync-devbox.ps1 -Build migration
+
+# SCSS: theme:compile statt cache:clear
+pwsh ./scripts/sync-devbox.ps1 -Build scss
+
+# JS: bin/build-storefront.sh
+pwsh ./scripts/sync-devbox.ps1 -Build js
+```
+
+Das Skript prüft vorab die SSH-Verbindung zu `devbox` und dass `master` lokal keine ungepushten Commits hat. Manueller Sync (für Trockenläufe oder einzelne Ziele) per tar-Pipeline:
 
 ```bash
 tar cf - --exclude='.idea' --exclude='node_modules' --exclude='vendor' --exclude='.git' --exclude='var' --exclude='.phpunit.cache' . | \

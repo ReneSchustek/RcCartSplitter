@@ -110,6 +110,21 @@ Das Plugin trifft eine Token-Wahl (`text-body-secondary`); die effektive Farbe u
 | Erstinstallation / JS-Änderung | `bin/build-storefront.sh` |
 | Nur PHP-Änderung | `php bin/console cache:clear` |
 
+Für den DevBox-Sync zu allen drei Zielen (Plugin-Master, `live-clone`, `live-latest`) automatisiert das lokale Skript [`scripts/sync-devbox.ps1`](scripts/sync-devbox.ps1) die tar-Pipeline und ruft je nach `-Build`-Wert (`cache`, `migration`, `scss`, `js`, `none`) den passenden Build-Befehl pro Live-Instanz auf. Das Skript gehört zur lokalen Operations-Toolbox und wird per Konvention nicht nach GitHub exportiert (`scripts/`-Blacklist in [`RELEASE.md`](RELEASE.md) Schritt 8).
+
+```powershell
+# Standard nach reinem PHP/Twig-Patch:
+pwsh ./scripts/sync-devbox.ps1
+
+# Nach Migration (Plugin-Update zwingend):
+pwsh ./scripts/sync-devbox.ps1 -Build migration
+
+# Nur eine Instanz neu spiegeln:
+pwsh ./scripts/sync-devbox.ps1 -Targets live-clone -Build js
+```
+
+Das Skript prüft vorab die SSH-Verbindung zu `devbox` und dass das lokale `master` keine ungepushten Commits gegen `origin/master` hat. Mit `-SkipPushCheck` lässt sich der Push-Check für lokale Trockenläufe abschalten.
+
 ## Entwicklung
 
 ```bash
