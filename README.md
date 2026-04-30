@@ -184,7 +184,7 @@ Vollständige Versions-Historie: [`CHANGELOG_de-DE.md`](CHANGELOG_de-DE.md) (deu
 
 ## Release-Prozess
 
-Reihenfolge für einen Live-Release (Pre-Release-Checks, DevBox-Sync, Plattform-Lints, BFSG-Live-Spotcheck, GitHub-Push) ist in [`RELEASE.md`](RELEASE.md) konsolidiert.
+Reihenfolge für einen Live-Release (Pre-Release-Checks, DevBox-Sync, Plattform-Lints, BFSG-Live-Spotcheck, GitHub-Push) ist in [`RELEASE.md`](RELEASE.md) konsolidiert. Der Rollback-Pfad bei fehlgeschlagenem Update steht in [`RELEASE.md` Sektion 10](RELEASE.md#10-rollback) — Plugin-Manager-Downgrade reicht, das Plugin hat keine eigenen Migrations.
 
 ## Lizenz
 

@@ -124,3 +124,51 @@ Blacklist (was nicht nach GitHub darf): `scripts/`, `.ai/`, `CLAUDE.md`, `brief-
 ## 9. Release-Readiness-Gate (CI)
 
 GitHub Actions führt den Job `release-readiness` bei Tag-Push (`v*`) aus und kombiniert `composer quality`, `composer coverage:gate` und `composer audit --no-dev` als harten Gate vor jedem Release-Tag. Ein roter Job blockiert den Release.
+
+## 10. Rollback
+
+Wenn ein Plugin-Update auf einem produktiven Shop fehlschlägt, gilt der folgende Pfad. Das Plugin hat keine eigenen Migrations und keine eigenen Tabellen — der Rollback ist deshalb ein reiner Plugin-Manager-Downgrade.
+
+### Vorbedingungen
+
+- DB-Backup empfohlen, auch wenn das Plugin keine eigenen Tabellen schreibt. Die DBAL-Batch-Korrektur in `OrderInputCorrectionService` aktualisiert `order_line_item.custom_fields`; ein Backup liefert den schnellsten Rollback-Pfad bei Datenfehlern.
+- Wartungs- oder Maintenance-Modus aktivieren, um konkurrierende Cart- und Checkout-Operationen während des Downgrades auszuschließen.
+
+### Schritte
+
+1. Plugin im Shopware-Admin (`Erweiterungen → Meine Erweiterungen`) deaktivieren.
+2. Vorherige Version einspielen — entweder Plugin-ZIP der Vorgängerversion über den Plugin-Manager hochladen **oder** im Container per Composer pinnen:
+   ```bash
+   ddev exec composer require ruhrcoder/rc-cart-splitter:1.x.y
+   ```
+3. Plugin-Liste neu einlesen und Plugin auf die zurückgespielte Version aktualisieren:
+   ```bash
+   ddev exec php bin/console plugin:refresh
+   ddev exec php bin/console plugin:update RcCartSplitter
+   ddev exec php bin/console cache:clear
+   ```
+4. Smoke-Test: zwei verschiedene TMMS-Eingaben am gleichen Produkt im Warenkorb anlegen, „Eingabe prüfen" durchlaufen, Bestellabschluss bis Confirm-Seite. Erwartung: jede Position trägt ihre eigenen Custom-Fields, keine Eingabe verschwindet.
+
+### Bekannte Begrenzung
+
+Bereits korrigierte `order_line_item.custom_fields` bleiben nach dem Downgrade in der Datenbank stehen. Das ist Absicht, kein Datenverlust: das Storefront stellt sie nach Plugin-Deaktivierung lediglich nicht mehr dar (`CartDisplayCorrectionSubscriber` läuft nicht).
+
+### Risikoflächen
+
+| Bereich | Komplexität | Begründung |
+|---|---|---|
+| DB-Schema | n/a | Plugin hat keine Migrations unter `src/Migration/` |
+| Custom-Fields | niedrig | Werte werden nur ergänzt, nicht überschrieben — Bestand bleibt konsistent |
+| Konfiguration | n/a | keine `config.xml`, kein `system_config`-Eintrag |
+| Cache | niedrig | `cache:clear` reicht; bei SCSS- oder JS-Änderungen zusätzlich `theme:compile` bzw. `bin/build-storefront.sh` |
+
+### Update-Hin-und-Zurück-Test (vor Major-/Minor-Release)
+
+Vor jedem Major- oder Minor-Release einmal manuell auf `live-clone` durchspielen:
+
+1. Plugin auf der Vorgängerversion starten (Bestand der produktiven Version).
+2. Auf die neue Version updaten (Schritte 4 und 5 dieser Datei).
+3. Anschließend den Rollback-Pfad oben durchlaufen (Schritte 1–4 dieser Sektion).
+4. Erneut auf die neue Version updaten.
+
+Befund unter `.ai/reviews/<datum>-update-rollback/` protokollieren — auch wenn der Test grün ist.
