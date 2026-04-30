@@ -3,15 +3,19 @@ import Plugin from 'src/plugin-system/plugin.class';
 // TMMS-Felder liegen in eigenen Formularen (ID-Schema productCustomerInputForm-{productId}-{count}) —
 // dieses Plugin sammelt sie pro Produkt, leitet daraus eine deterministische LineItem-ID ab und
 // injiziert die Werte als Hidden-Felder, damit der Cart sie ohne weiteren Round-Trip anzeigen kann.
-// Suffix-Daten sind generisch (alle form.dataset.rc*Suffix-Attribute fliessen automatisch in den Hash);
-// die Event-Anmeldung in _registerEvents muss aktuell pro Suffix-Plugin erweitert werden.
+// Suffix-Daten sind generisch: jedes Plugin schreibt seinen Wert in form.dataset.rc*Suffix und meldet
+// die Aenderung ueber das gemeinsame CustomEvent rcSuffixChanged. Neue Suffix-Plugins
+// brauchen keine Code-Aenderung in dieser Datei mehr.
 // Erweiterungs-Howto: README, Abschnitt "Erweiterung: weitere Suffix-Plugins".
 export default class CartSplitterPlugin extends Plugin {
 
     // Muss mit TmmsConstants::INPUT_COUNT (PHP) uebereinstimmen
     static TMMS_MAX_FIELDS = 5;
 
-    _suffixEvents = [];
+    // Generisches Suffix-Event aus dem Plugin-Interaktionsprotokoll. Bewusst neutraler Namespace —
+    // kein Plugin owned den Namen, jedes Suffix-Plugin (RcColorPicker, RcDynamicPrice, ...) feuert ihn
+    // nach jeder Wert-Aenderung.
+    static SUFFIX_CHANGED_EVENT = 'rcSuffixChanged';
 
     init() {
         this._form = this.el;
@@ -53,9 +57,7 @@ export default class CartSplitterPlugin extends Plugin {
         }
 
         if (this._boundSuffixChanged && this._form) {
-            this._suffixEvents.forEach(evt => {
-                this._form.removeEventListener(evt, this._boundSuffixChanged);
-            });
+            this._form.removeEventListener(CartSplitterPlugin.SUFFIX_CHANGED_EVENT, this._boundSuffixChanged);
         }
 
         if (this._boundBeforeSubmit && this._form) {
@@ -71,11 +73,8 @@ export default class CartSplitterPlugin extends Plugin {
             input.addEventListener('input', this._boundUpdate);
         });
 
-        // Generisch auf alle rc*Changed-Events reagieren
-        this._suffixEvents = ['rcMeterLengthChanged', 'rcColorPickerChanged'];
-        this._suffixEvents.forEach(evt => {
-            this._form.addEventListener(evt, this._boundSuffixChanged);
-        });
+        // Ein einziger Listener: jedes Suffix-Plugin signalisiert seine Aenderung ueber das generische Event.
+        this._form.addEventListener(CartSplitterPlugin.SUFFIX_CHANGED_EVENT, this._boundSuffixChanged);
 
         // capture: true → feuert VOR Shopware-AddToCartPlugin (das auf bubble lauscht)
         this._form.addEventListener('submit', this._boundBeforeSubmit, true);

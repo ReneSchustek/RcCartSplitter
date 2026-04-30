@@ -1,3 +1,15 @@
+# 2.0.0
+
+> **Breaking Change.** Das Storefront-JS hört nur noch auf das generische Event `rcSuffixChanged`. Suffix-Plugins müssen dieses Event nach jeder Wert-Änderung mitfeuern; die alte hardcodierte Event-Liste (`rcMeterLengthChanged`, `rcColorPickerChanged`) wird nicht mehr beachtet. Plugin-spezifische Events bleiben für Plugin-interne Listener zulässig.
+
+- Geändert: Generisches Suffix-Event `rcSuffixChanged` als alleiniger Trigger für die LineItem-ID-Re-Berechnung. Der Event-Name ist als statische Konstante `CartSplitterPlugin.SUFFIX_CHANGED_EVENT` exponiert und durch einen JS-Unit-Test verankert (POLS).
+- Verbessert: Erweiterungs-Pfad für neue Suffix-Plugins erfordert keinen Pull Request mehr gegen `cart-splitter.plugin.js` — Suffix setzen plus generisches Event dispatchen reicht.
+- Geändert: Plugin-Interaktionsprotokoll (`.ai/rules/plugin-interaction.md`) und README dokumentieren den neuen Event-Vertrag und den vereinfachten Erweiterungs-Pfad.
+
+### Upgrade-Hinweis
+- Vor dem Update auf v2.0.0 müssen alle aktiven Suffix-Plugins die neue Event-Konvention erfüllen: **RcColorPicker ≥ 2.2.0** und **RcDynamicPrice ≥ 1.7.0**. Ohne aktualisierte Suffix-Plugins greifen Suffix-Änderungen am Form erst beim nächsten regulären TMMS-Input-Event — die Funktion bricht nicht, läuft aber träge.
+- Standalone-Suffix-Plugins (ohne RcCartSplitter) laufen unverändert, das zusätzlich gefeuerte Event ist ohne Listener ein No-op.
+
 # 1.2.0
 
 - Hinzugefügt: Screenreader-Bezugskontext für die Kundeneingaben-Liste über `aria-label` — neue Snippets in Deutsch und Englisch (WCAG 1.3.1)

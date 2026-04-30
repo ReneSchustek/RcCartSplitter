@@ -42,19 +42,20 @@ php bin/console cache:clear
 
 ## Erweiterung: weitere Suffix-Plugins
 
-Das Plugin konsumiert generisch alle `data-rc*Suffix`-Attribute am `<form>` über `_collectAllSuffixes()` und mischt sie automatisch in den LineItem-ID-Hash. Die Event-Anmeldung in `_registerEvents` ist hingegen eine hardcodierte Liste (`rcMeterLengthChanged`, `rcColorPickerChanged`). Ein neues Suffix-Plugin muss folgende drei Schritte durchführen:
+Das Plugin konsumiert generisch alle `data-rc*Suffix`-Attribute am `<form>` über `_collectAllSuffixes()` und mischt sie automatisch in den LineItem-ID-Hash. Die Event-Anmeldung ist seit v2.0.0 ebenfalls generisch: ein einziges Event `rcSuffixChanged` triggert die Re-Berechnung. Ein neues Suffix-Plugin braucht keine Code-Änderung an dieser Datei mehr — zwei Schritte reichen:
 
 1. Suffix-Wert am Form setzen:
    ```js
    form.dataset.rcMaterialSuffix = 'eiche';
    ```
-2. Nach jeder Änderung ein eigenes Event dispatchen:
+2. Nach jeder Änderung das generische Cart-Splitter-Event dispatchen:
    ```js
-   form.dispatchEvent(new CustomEvent('rcMaterialChanged', { bubbles: true }));
+   form.dispatchEvent(new CustomEvent('rcSuffixChanged', {
+       detail: { source: 'rcMaterial', suffix: 'eiche' },
+   }));
    ```
-3. Pull-Request gegen `cart-splitter.plugin.js`, der den Event-Namen in das `_suffixEvents`-Array einfügt. Bis das gemerged ist, läuft die Hash-Neuberechnung erst beim nächsten regulären Input-Event auf einem TMMS-Feld.
 
-**Begründung:** Eine globale Emission (`rcCartSplitter:suffixChanged`) wäre POLS-konformer, erfordert aber Code-Änderungen in allen bestehenden Suffix-Plugins (RcMeterLength, RcColorPicker) und einen Major-Version-Bump. Bewusst nicht jetzt, sondern in einer eigenen Major-Release.
+Der Event-Name ist als statische Konstante `CartSplitterPlugin.SUFFIX_CHANGED_EVENT` exponiert; ein JS-Unit-Test in `tests/Js/cart-splitter.test.mjs` verankert den Vertrag. Plugin-spezifische Events (`rc{Name}Changed`) bleiben für Plugin-interne Listener weiterhin zulässig.
 
 ## Konfiguration
 

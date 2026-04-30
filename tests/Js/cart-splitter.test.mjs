@@ -60,6 +60,13 @@ function makeTmmsForm(fields) {
     };
 }
 
+describe('SUFFIX_CHANGED_EVENT — Protokoll-Vertrag', () => {
+    test('exponiert das generische Suffix-Event als statische Konstante (Plugin-Interaktionsprotokoll)', () => {
+        // Suffix-Plugins binden sich gegen genau diesen Event-Namen — ein Tippfehler hier bricht den Vertrag stillschweigend.
+        assert.strictEqual(CartSplitterPlugin.SUFFIX_CHANGED_EVENT, 'rcSuffixChanged');
+    });
+});
+
 describe('_fnv32a — FNV-1a-Determinismus', () => {
     test('liefert fuer denselben Input denselben Hash (Reproduzierbarkeit)', () => {
         const plugin = makePlugin();
