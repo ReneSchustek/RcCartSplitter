@@ -57,7 +57,30 @@ final class TmmsCartInputProvider implements CartInputProviderInterface
             return [];
         }
 
-        return [TmmsConstants::PAYLOAD_TMMS_INPUTS => $sessionInputs];
+        return $this->buildUnifiedFromSession($sessionInputs);
+    }
+
+    /**
+     * Session-Fallback muss dieselbe Payload-Form wie der JS-Pfad erzeugen.
+     * Sonst sehen Twig-Template (`rcTmmsField<N>Value`) und Display-Korrektur die Daten
+     * nicht und alle Split-Positionen eines Produktes zeigen dieselben Session-Werte.
+     *
+     * @param array<int, array<string, string>> $sessionInputs
+     * @return array<string, mixed>
+     */
+    private function buildUnifiedFromSession(array $sessionInputs): array
+    {
+        $unified = [TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1'];
+
+        foreach ($sessionInputs as $count => $data) {
+            $unified[TmmsConstants::payloadValueKey($count)] = $data[TmmsConstants::SESSION_VALUE_KEY] ?? '';
+            $unified[TmmsConstants::payloadLabelKey($count)] = $data[TmmsConstants::SESSION_LABEL_KEY] ?? '';
+        }
+
+        // Altbestellungen ohne rcTmmsActive nutzen weiterhin den Sammel-Key — Order-Korrektur bleibt kompatibel.
+        $unified[TmmsConstants::PAYLOAD_TMMS_INPUTS] = $sessionInputs;
+
+        return $unified;
     }
 
     private function fetchProductNumber(string $productId): ?string

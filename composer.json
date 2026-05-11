@@ -1,7 +1,7 @@
 {
     "name": "ruhrcoder/rc-cart-splitter",
     "description": "Erzeugt separate Warenkorbpositionen wenn Kundeneingaben (z. B. TMMS) sich unterscheiden",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "type": "shopware-platform-plugin",
     "license": "proprietary",
     "authors": [
@@ -39,14 +39,14 @@
         }
     },
     "scripts": {
-        "test": "vendor/bin/phpunit",
+        "test": "php vendor/bin/phpunit",
         "test:js": "node --test tests/Js/cart-splitter.test.mjs",
-        "phpstan": "vendor/bin/phpstan analyse --memory-limit=512M",
-        "cs-fix": "vendor/bin/php-cs-fixer fix",
-        "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff",
+        "phpstan": "php vendor/bin/phpstan analyse --memory-limit=512M",
+        "cs-fix": "php vendor/bin/php-cs-fixer fix",
+        "cs-check": "php vendor/bin/php-cs-fixer fix --dry-run --diff",
         "lint:twig": "php bin/lint-twig.php",
         "lint:xml": "php bin/lint-xml.php",
-        "coverage": "vendor/bin/phpunit --coverage-clover coverage.xml --coverage-text --display-warnings",
+        "coverage": "php vendor/bin/phpunit --coverage-clover coverage.xml --coverage-text --display-warnings",
         "coverage:gate": "php bin/coverage-gate.php",
         "quality": [
             "@cs-check",

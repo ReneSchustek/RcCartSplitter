@@ -64,8 +64,8 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
 
         $activeFields = $this->fetchCustomFields($itemWithPayloadId);
         self::assertNotNull($activeFields);
-        self::assertSame('1190', $activeFields['tmms_customer_input_1_value'] ?? null);
-        self::assertSame('Laenge', $activeFields['tmms_customer_input_1_label'] ?? null);
+        self::assertSame('1190', $activeFields[TmmsConstants::customFieldValueKey(1)] ?? null);
+        self::assertSame('Laenge', $activeFields[TmmsConstants::customFieldLabelKey(1)] ?? null);
 
         $passiveFields = $this->fetchCustomFields($itemWithoutPayloadId);
         self::assertNull(
@@ -87,8 +87,8 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
             $secondSplitId,
             payloadForSecond: [
                 TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                'rcTmmsField1Value' => '1195',
-                'rcTmmsField1Label' => 'Laenge',
+                TmmsConstants::payloadValueKey(1) => '1195',
+                TmmsConstants::payloadLabelKey(1) => 'Laenge',
             ],
         );
 
@@ -99,8 +99,8 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
         $first = $this->fetchCustomFields($firstSplitId);
         $second = $this->fetchCustomFields($secondSplitId);
 
-        self::assertSame('1190', $first['tmms_customer_input_1_value'] ?? null);
-        self::assertSame('1195', $second['tmms_customer_input_1_value'] ?? null);
+        self::assertSame('1190', $first[TmmsConstants::customFieldValueKey(1)] ?? null);
+        self::assertSame('1195', $second[TmmsConstants::customFieldValueKey(1)] ?? null);
     }
 
     #[Test]
@@ -130,7 +130,7 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
         $this->getSubscriber()->onCheckoutFinish($event);
 
         $fields = $this->fetchCustomFields($itemId);
-        self::assertSame('1190', $fields['tmms_customer_input_1_value'] ?? null);
+        self::assertSame('1190', $fields[TmmsConstants::customFieldValueKey(1)] ?? null);
     }
 
     /** @param array<string, mixed>|null $payloadForSecond */
@@ -147,8 +147,8 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
         $orderData['lineItems'][0]['id'] = $firstLineItemId;
         $orderData['lineItems'][0]['payload'] = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            'rcTmmsField1Value' => '1190',
-            'rcTmmsField1Label' => 'Laenge',
+            TmmsConstants::payloadValueKey(1) => '1190',
+            TmmsConstants::payloadLabelKey(1) => 'Laenge',
         ];
 
         // Zweites LineItem: gleicher Datensatz, andere ID, optional ohne Payload

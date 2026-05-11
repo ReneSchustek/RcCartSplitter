@@ -23,6 +23,12 @@ var/
 public/bundles/
 node_modules/
 
+# Test- und Coverage-Caches (nie committen)
+.phpunit.result.cache
+.phpunit.cache/
+coverage.xml
+coverage/
+
 # KI-Konfiguration und -Artefakte (niemals committen)
 .ai/
 CLAUDE.md

@@ -79,8 +79,8 @@ final class TmmsCartInputProviderTest extends TestCase
                 $productId => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        self::payloadValueKey(1) => '100cm',
-                        self::payloadLabelKey(1) => 'Laenge',
+                        TmmsConstants::payloadValueKey(1) => '100cm',
+                        TmmsConstants::payloadLabelKey(1) => 'Laenge',
                     ],
                 ],
             ],
@@ -96,8 +96,8 @@ final class TmmsCartInputProviderTest extends TestCase
         $result = $this->provider->provide($event);
 
         self::assertSame('1', $result[TmmsConstants::PAYLOAD_TMMS_ACTIVE]);
-        self::assertSame('100cm', $result[self::payloadValueKey(1)]);
-        self::assertSame('Laenge', $result[self::payloadLabelKey(1)]);
+        self::assertSame('100cm', $result[TmmsConstants::payloadValueKey(1)]);
+        self::assertSame('Laenge', $result[TmmsConstants::payloadLabelKey(1)]);
     }
 
     #[Test]
@@ -106,7 +106,7 @@ final class TmmsCartInputProviderTest extends TestCase
         $productHexId = Uuid::randomHex();
         $request = new Request();
         $session = new Session(new MockArraySessionStorage());
-        $session->set(self::sessionKey(1, 'SW10001'), [
+        $session->set(TmmsConstants::sessionKey(1, 'SW10001'), [
             TmmsConstants::SESSION_VALUE_KEY => '50cm',
             TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
         ]);
@@ -127,6 +127,14 @@ final class TmmsCartInputProviderTest extends TestCase
 
         $result = $this->provider->provide($event);
 
+        // Session-Fallback liefert dieselbe Form wie der JS-Pfad: rcTmmsActive + Einzelfelder.
+        // Sonst sehen Twig-Template und Display-Korrektur die Session-Daten nicht und alle
+        // Split-Positionen zeigen den gleichen Session-Wert.
+        self::assertSame('1', $result[TmmsConstants::PAYLOAD_TMMS_ACTIVE]);
+        self::assertSame('50cm', $result[TmmsConstants::payloadValueKey(1)]);
+        self::assertSame('Laenge', $result[TmmsConstants::payloadLabelKey(1)]);
+
+        // Sammel-Key bleibt zusaetzlich erhalten — Order-Korrektur deckt damit Altbestellungen ab.
         self::assertArrayHasKey(TmmsConstants::PAYLOAD_TMMS_INPUTS, $result);
         $inputs = $result[TmmsConstants::PAYLOAD_TMMS_INPUTS];
         self::assertSame('50cm', $inputs[1][TmmsConstants::SESSION_VALUE_KEY]);
@@ -183,20 +191,5 @@ final class TmmsCartInputProviderTest extends TestCase
             $cart,
             $this->createMock(SalesChannelContext::class),
         );
-    }
-
-    private static function payloadValueKey(int $i): string
-    {
-        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
-    }
-
-    private static function payloadLabelKey(int $i): string
-    {
-        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_LABEL_SUFFIX;
-    }
-
-    private static function sessionKey(int $i, string $productNumber): string
-    {
-        return TmmsConstants::SESSION_KEY_PREFIX . $i . '_' . $productNumber;
     }
 }

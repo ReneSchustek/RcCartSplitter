@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 $finder = PhpCsFixer\Finder::create()
-    ->in(__DIR__ . '/src')
-    ->exclude('vendor');
+    ->in([__DIR__ . '/src', __DIR__ . '/tests'])
+    ->exclude(['vendor', 'var']);
 
 return (new PhpCsFixer\Config())
     ->setRules([

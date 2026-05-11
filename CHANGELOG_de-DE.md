@@ -1,3 +1,11 @@
+# 2.0.2
+
+- Behoben: TMMS-Eingaben werden bei Split-Positionen (z. B. mehrere Bodenprofile mit unterschiedlichem Gehrungsschnitt und Längen-Suffix aus RcDynamicPrice) nicht mehr durch Session-Werte überschrieben. Der Session-Fallback im Input-Provider liefert jetzt dieselbe Payload-Form wie der JS-Pfad (`rcTmmsActive` plus `rcTmmsField<N>Value`/`Label`), und der Display-Subscriber entfernt geleakte TMMS-Extensions für Felder ohne Position-Wert. Betrifft alle TMMS-Feldtypen — Select-Felder besonders.
+- Verbessert: Display-Korrektur schreibt jetzt zusätzlich das Label in die TMMS-Extension (vorher nur Wert).
+- Verbessert (Security): TMMS-Session-Daten werden jetzt am Read-Layer (`TmmsPayloadReader::readSessionData`) gleich sanitisiert wie der Request-Pfad — `strip_tags` plus 2000-Zeichen-Cap. Schließt eine Asymmetrie, durch die Roh-Strings aus der Session unsanitisiert in `lineItem->payload` und `order_line_item.custom_fields` gelangen konnten (stored-XSS-/Payload-Bomb-Hardening, Defense-in-Depth gegenüber Twig-Auto-Escape).
+- Aufgeräumt: Alle TMMS-Schema-Magic-Strings (`rcTmmsField<N>Value/Label`, `tmms_customer_input_<N>_value/label/placeholder/fieldtype`, `tmmsLineItemCustomerInput<N>`, `tmms_customer_input_<N>_<productNumber>`) konsolidiert in `TmmsConstants`-Builder-Methoden (`payloadValueKey`, `payloadLabelKey`, `sessionKey`, `extensionName`, `customFieldValueKey`, `customFieldLabelKey`, `customFieldPlaceholderKey`, `customFieldFieldtypeKey`). Schema-Änderungen brauchen jetzt nur noch eine Datei-Änderung.
+- Aufgeräumt: `composer quality` läuft portabel auf Windows und Linux (`php vendor/bin/...`-Wrapper), `.php-cs-fixer.php` deckt jetzt auch `tests/` ab.
+
 # 2.0.1
 
 - Doku: README präzisiert den Detail-Payload-Vertrag (`source`-Pflichtfeld, `suffix` empfohlen, plugin-spezifische Felder unverbindlich) und nennt die Self-Loop-Konvention für Plugins, die das Event sowohl feuern als auch abhören. Naming-Begründung für den neutralen Event-Namespace dokumentiert (vorher nur in interner Notiz).

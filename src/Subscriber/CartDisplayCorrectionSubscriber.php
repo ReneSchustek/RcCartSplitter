@@ -34,24 +34,80 @@ final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
                 continue;
             }
 
-            $payload = $lineItem->getPayload();
-            if (!isset($payload[TmmsConstants::PAYLOAD_TMMS_ACTIVE])) {
+            $this->correctLineItem($lineItem);
+        }
+    }
+
+    private function correctLineItem(LineItem $lineItem): void
+    {
+        $payload = $lineItem->getPayload();
+        $payloadActive = isset($payload[TmmsConstants::PAYLOAD_TMMS_ACTIVE]);
+        $sessionInputs = $this->extractSessionInputs($payload);
+
+        if (!$payloadActive && $sessionInputs === null) {
+            return;
+        }
+
+        // Wenn rcTmmsActive gesetzt ist, ist der Position-Payload autoritativ. Fuer leere Felder
+        // muss die TMMS-Extension entfernt werden, sonst leakt der Session-Wert (gleicher
+        // Produktnummer-Eintrag fuer alle Split-Positionen) in die Anzeige.
+        for ($i = 1; $i <= TmmsConstants::INPUT_COUNT; $i++) {
+            [$value, $label] = $this->resolveField($i, $payload, $sessionInputs);
+
+            $extensionName = TmmsConstants::extensionName($i);
+
+            if ($value === '') {
+                if ($payloadActive) {
+                    $lineItem->removeExtension($extensionName);
+                }
                 continue;
             }
 
-            for ($i = 1; $i <= TmmsConstants::INPUT_COUNT; $i++) {
-                $valueKey = TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
-                $value = (string) ($payload[$valueKey] ?? '');
-
-                if ($value === '') {
-                    continue;
-                }
-
-                $lineItem->addExtension(
-                    'tmmsLineItemCustomerInput' . $i,
-                    new ArrayEntity(['value' => $value]),
-                );
-            }
+            $lineItem->addExtension(
+                $extensionName,
+                new ArrayEntity(['value' => $value, 'label' => $label]),
+            );
         }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<int, array<string, string>>|null
+     */
+    private function extractSessionInputs(array $payload): ?array
+    {
+        $raw = $payload[TmmsConstants::PAYLOAD_TMMS_INPUTS] ?? null;
+        if (!is_array($raw) || $raw === []) {
+            return null;
+        }
+
+        /** @var array<int, array<string, string>> $raw */
+        return $raw;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<int, array<string, string>>|null $sessionInputs
+     * @return array{0: string, 1: string}
+     */
+    private function resolveField(int $i, array $payload, ?array $sessionInputs): array
+    {
+        $value = (string) ($payload[TmmsConstants::payloadValueKey($i)] ?? '');
+        $label = (string) ($payload[TmmsConstants::payloadLabelKey($i)] ?? '');
+
+        if ($value !== '') {
+            return [$value, $label];
+        }
+
+        // Defense-in-Depth: Alt-Carts ohne rcTmmsActive haben den Session-Schluessel als einzige Quelle.
+        $sessionEntry = $sessionInputs[$i] ?? null;
+        if (!is_array($sessionEntry)) {
+            return ['', ''];
+        }
+
+        $sessionValue = $sessionEntry[TmmsConstants::SESSION_VALUE_KEY] ?? '';
+        $sessionLabel = $sessionEntry[TmmsConstants::SESSION_LABEL_KEY] ?? '';
+
+        return [$sessionValue, $sessionLabel];
     }
 }

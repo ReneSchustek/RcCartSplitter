@@ -92,13 +92,8 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
         }
 
         for ($i = 1; $i <= TmmsConstants::INPUT_COUNT; $i++) {
-            $valueKey = TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
-            $labelKey = TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_LABEL_SUFFIX;
-
-            $value = $payload[$valueKey] ?? '';
-
-            $customFields['tmms_customer_input_' . $i . '_value'] = $value;
-            $customFields['tmms_customer_input_' . $i . '_label'] = $payload[$labelKey] ?? '';
+            $customFields[TmmsConstants::customFieldValueKey($i)] = $payload[TmmsConstants::payloadValueKey($i)] ?? '';
+            $customFields[TmmsConstants::customFieldLabelKey($i)] = $payload[TmmsConstants::payloadLabelKey($i)] ?? '';
         }
 
         return $customFields;
@@ -118,10 +113,10 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
         }
 
         foreach ($tmmsInputs as $count => $data) {
-            $customFields['tmms_customer_input_' . $count . '_value'] = $data[TmmsConstants::SESSION_VALUE_KEY] ?? '';
-            $customFields['tmms_customer_input_' . $count . '_label'] = $data[TmmsConstants::SESSION_LABEL_KEY] ?? '';
-            $customFields['tmms_customer_input_' . $count . '_placeholder'] = $data[TmmsConstants::SESSION_PLACEHOLDER_KEY] ?? '';
-            $customFields['tmms_customer_input_' . $count . '_fieldtype'] = $data[TmmsConstants::SESSION_FIELDTYPE_KEY] ?? '';
+            $customFields[TmmsConstants::customFieldValueKey($count)] = $data[TmmsConstants::SESSION_VALUE_KEY] ?? '';
+            $customFields[TmmsConstants::customFieldLabelKey($count)] = $data[TmmsConstants::SESSION_LABEL_KEY] ?? '';
+            $customFields[TmmsConstants::customFieldPlaceholderKey($count)] = $data[TmmsConstants::SESSION_PLACEHOLDER_KEY] ?? '';
+            $customFields[TmmsConstants::customFieldFieldtypeKey($count)] = $data[TmmsConstants::SESSION_FIELDTYPE_KEY] ?? '';
         }
 
         return $customFields;

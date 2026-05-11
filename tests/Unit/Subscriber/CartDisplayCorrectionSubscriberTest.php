@@ -13,10 +13,10 @@ use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\Framework\Struct\ArrayEntity;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPage;
 use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPageLoadedEvent;
 use Symfony\Component\HttpFoundation\Request;
-use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 #[CoversClass(CartDisplayCorrectionSubscriber::class)]
 final class CartDisplayCorrectionSubscriberTest extends TestCase
@@ -42,76 +42,135 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
     public function onCartPageLoadedSkipsNonProductLineItems(): void
     {
         $lineItem = new LineItem('promo-1', LineItem::PROMOTION_LINE_ITEM_TYPE);
+        $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_ACTIVE, '1');
+        $lineItem->setPayloadValue(TmmsConstants::payloadValueKey(1), '100cm');
 
-        $event = $this->createCartPageEvent(new LineItemCollection([$lineItem]));
+        $this->dispatch($lineItem);
 
-        $this->subscriber->onCartPageLoaded($event);
-
-        // Promotion-Items sollten keine Extensions erhalten
-        self::assertFalse($lineItem->hasExtension('tmmsLineItemCustomerInput1'));
+        // Promotion-Items duerfen nicht beruehrt werden — TMMS-Logik ist produktspezifisch.
+        self::assertFalse($lineItem->hasExtension(TmmsConstants::extensionName(1)));
     }
 
     #[Test]
-    public function onCartPageLoadedSkipsItemsWithoutTmmsActive(): void
+    public function onCartPageLoadedSkipsItemsWithoutTmmsMarkerOrSessionFallback(): void
     {
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue('someOtherKey', 'value');
 
-        $event = $this->createCartPageEvent(new LineItemCollection([$lineItem]));
+        // Eine vorhandene TMMS-Extension darf in diesem Fall stehen bleiben — wir korrigieren nur,
+        // wenn unser Plugin Daten beigesteuert hat.
+        $lineItem->addExtension(
+            TmmsConstants::extensionName(1),
+            new ArrayEntity(['value' => 'fremd']),
+        );
 
-        $this->subscriber->onCartPageLoaded($event);
+        $this->dispatch($lineItem);
 
-        self::assertFalse($lineItem->hasExtension('tmmsLineItemCustomerInput1'));
+        $ext = $lineItem->getExtension(TmmsConstants::extensionName(1));
+        self::assertInstanceOf(ArrayEntity::class, $ext);
+        self::assertSame('fremd', $ext->get('value'));
     }
 
     #[Test]
-    public function onCartPageLoadedSetsExtensionsForActiveItems(): void
+    public function onCartPageLoadedSetsValueAndLabelExtensionFromPayload(): void
     {
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_ACTIVE, '1');
-        $lineItem->setPayloadValue('rcTmmsField1Value', '100cm');
-        $lineItem->setPayloadValue('rcTmmsField2Value', 'rot');
+        $lineItem->setPayloadValue(TmmsConstants::payloadValueKey(1), '100cm');
+        $lineItem->setPayloadValue(TmmsConstants::payloadLabelKey(1), 'Laenge');
+        $lineItem->setPayloadValue(TmmsConstants::payloadValueKey(2), 'rechts');
+        $lineItem->setPayloadValue(TmmsConstants::payloadLabelKey(2), 'Gehrungsschnitt');
 
-        $event = $this->createCartPageEvent(new LineItemCollection([$lineItem]));
+        $this->dispatch($lineItem);
 
-        $this->subscriber->onCartPageLoaded($event);
-
-        $ext1 = $lineItem->getExtension('tmmsLineItemCustomerInput1');
+        $ext1 = $lineItem->getExtension(TmmsConstants::extensionName(1));
         self::assertInstanceOf(ArrayEntity::class, $ext1);
         self::assertSame('100cm', $ext1->get('value'));
+        self::assertSame('Laenge', $ext1->get('label'));
 
-        $ext2 = $lineItem->getExtension('tmmsLineItemCustomerInput2');
+        $ext2 = $lineItem->getExtension(TmmsConstants::extensionName(2));
         self::assertInstanceOf(ArrayEntity::class, $ext2);
-        self::assertSame('rot', $ext2->get('value'));
+        self::assertSame('rechts', $ext2->get('value'));
+        self::assertSame('Gehrungsschnitt', $ext2->get('label'));
     }
 
     #[Test]
-    public function onCartPageLoadedSkipsEmptyValues(): void
+    public function onCartPageLoadedRemovesLeakedTmmsExtensionForEmptyPayloadField(): void
     {
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_ACTIVE, '1');
-        $lineItem->setPayloadValue('rcTmmsField1Value', '100cm');
-        // Feld 2 nicht gesetzt → soll keine Extension erzeugen
+        $lineItem->setPayloadValue(TmmsConstants::payloadValueKey(1), '100cm');
+        // Feld 2 nicht im Payload — Position hat dieses Feld nicht ausgefuellt.
 
-        // Vorher eine TMMS-Extension setzen (simuliert TMMS-Subscriber)
+        // TMMS hat zuvor aus der Session pro Produktnummer dieselbe Extension fuer alle
+        // Split-Positionen geschrieben. Genau dieser Leak muss verschwinden, sonst zeigen
+        // beide Positionen dasselbe Feld 2.
         $lineItem->addExtension(
-            'tmmsLineItemCustomerInput2',
+            TmmsConstants::extensionName(2),
+            new ArrayEntity(['value' => 'Session-Leak']),
+        );
+
+        $this->dispatch($lineItem);
+
+        self::assertTrue($lineItem->hasExtension(TmmsConstants::extensionName(1)));
+        self::assertFalse($lineItem->hasExtension(TmmsConstants::extensionName(2)));
+    }
+
+    #[Test]
+    public function onCartPageLoadedHandlesLegacySessionFallbackWithoutTmmsActive(): void
+    {
+        // Alt-Carts (vor dem Provider-Fix) haben nur den Sammel-Key — Defense-in-Depth:
+        // auch dieser Pfad muss die Anzeige pro Position korrigieren.
+        $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
+        $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_INPUTS, [
+            1 => [
+                TmmsConstants::SESSION_VALUE_KEY => '50cm',
+                TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
+            ],
+            2 => [
+                TmmsConstants::SESSION_VALUE_KEY => 'links',
+                TmmsConstants::SESSION_LABEL_KEY => 'Gehrungsschnitt',
+            ],
+        ]);
+
+        $this->dispatch($lineItem);
+
+        $ext1 = $lineItem->getExtension(TmmsConstants::extensionName(1));
+        self::assertInstanceOf(ArrayEntity::class, $ext1);
+        self::assertSame('50cm', $ext1->get('value'));
+        self::assertSame('Laenge', $ext1->get('label'));
+
+        $ext2 = $lineItem->getExtension(TmmsConstants::extensionName(2));
+        self::assertInstanceOf(ArrayEntity::class, $ext2);
+        self::assertSame('links', $ext2->get('value'));
+        self::assertSame('Gehrungsschnitt', $ext2->get('label'));
+    }
+
+    #[Test]
+    public function onCartPageLoadedDoesNotRemoveExtensionsInLegacySessionFallback(): void
+    {
+        // Ohne rcTmmsActive duerfen wir keine Extensions entfernen — wir wissen nicht,
+        // ob der Payload autoritativ ist. Defensive Variante: nur ergaenzen.
+        $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
+        $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_INPUTS, [
+            1 => [
+                TmmsConstants::SESSION_VALUE_KEY => '50cm',
+                TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
+            ],
+        ]);
+        $lineItem->addExtension(
+            TmmsConstants::extensionName(2),
             new ArrayEntity(['value' => 'TMMS-Originalwert']),
         );
 
-        $event = $this->createCartPageEvent(new LineItemCollection([$lineItem]));
+        $this->dispatch($lineItem);
 
-        $this->subscriber->onCartPageLoaded($event);
+        self::assertTrue($lineItem->hasExtension(TmmsConstants::extensionName(2)));
+    }
 
-        // Feld 1 wurde korrigiert
-        $ext1 = $lineItem->getExtension('tmmsLineItemCustomerInput1');
-        self::assertInstanceOf(ArrayEntity::class, $ext1);
-        self::assertSame('100cm', $ext1->get('value'));
-
-        // Feld 2: TMMS-Originalwert bleibt erhalten (nicht überschrieben)
-        $ext2 = $lineItem->getExtension('tmmsLineItemCustomerInput2');
-        self::assertInstanceOf(ArrayEntity::class, $ext2);
-        self::assertSame('TMMS-Originalwert', $ext2->get('value'));
+    private function dispatch(LineItem $lineItem): void
+    {
+        $this->subscriber->onCartPageLoaded($this->createCartPageEvent(new LineItemCollection([$lineItem])));
     }
 
     private function createCartPageEvent(LineItemCollection $lineItems): CheckoutCartPageLoadedEvent
@@ -122,11 +181,9 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
         $page = new CheckoutCartPage();
         $page->setCart($cart);
 
-        $salesChannelContext = $this->createMock(SalesChannelContext::class);
-
         return new CheckoutCartPageLoadedEvent(
             $page,
-            $salesChannelContext,
+            $this->createMock(SalesChannelContext::class),
             new Request(),
         );
     }

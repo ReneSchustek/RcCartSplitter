@@ -1,3 +1,11 @@
+# 2.0.2
+
+- Fixed: TMMS inputs on split positions (e.g. multiple floor-profile items with different mitre cuts and a length suffix from RcDynamicPrice) are no longer overwritten by session values. The session fallback in the input provider now emits the same payload shape as the JS path (`rcTmmsActive` plus `rcTmmsField<N>Value`/`Label`), and the display subscriber removes leaked TMMS extensions for fields the position did not fill. Affects all TMMS field types — select fields in particular.
+- Improved: The display correction now writes the label into the TMMS extension as well (previously value only).
+- Improved (security): TMMS session data is now sanitised at the read layer (`TmmsPayloadReader::readSessionData`) using the same profile as the request path — `strip_tags` plus a 2000-character cap. Closes an asymmetry that let raw session strings flow unfiltered into `lineItem->payload` and `order_line_item.custom_fields` (stored-XSS / payload-bomb hardening, defence-in-depth beyond Twig auto-escape).
+- Cleanup: All TMMS schema magic strings (`rcTmmsField<N>Value/Label`, `tmms_customer_input_<N>_value/label/placeholder/fieldtype`, `tmmsLineItemCustomerInput<N>`, `tmms_customer_input_<N>_<productNumber>`) consolidated into `TmmsConstants` builder methods (`payloadValueKey`, `payloadLabelKey`, `sessionKey`, `extensionName`, `customFieldValueKey`, `customFieldLabelKey`, `customFieldPlaceholderKey`, `customFieldFieldtypeKey`). Schema changes now require a single-file edit.
+- Cleanup: `composer quality` runs portably on Windows and Linux (`php vendor/bin/...` wrappers), `.php-cs-fixer.php` now covers `tests/` as well.
+
 # 2.0.1
 
 - Docs: README now spells out the detail-payload contract (`source` required, `suffix` recommended, plugin-specific fields non-binding) and the self-loop convention for plugins that both fire and listen to the event. Naming rationale for the neutral event namespace documented (was internal note only).

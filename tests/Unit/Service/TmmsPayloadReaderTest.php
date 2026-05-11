@@ -41,7 +41,7 @@ final class TmmsPayloadReaderTest extends TestCase
             'lineItems' => [
                 'product-123' => [
                     'payload' => [
-                        self::payloadValueKey(1) => 'Wert',
+                        TmmsConstants::payloadValueKey(1) => 'Wert',
                     ],
                 ],
             ],
@@ -60,10 +60,10 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        self::payloadValueKey(1) => ' 100cm ',
-                        self::payloadLabelKey(1) => ' Laenge ',
-                        self::payloadValueKey(2) => 'rot',
-                        self::payloadLabelKey(2) => 'Farbe',
+                        TmmsConstants::payloadValueKey(1) => ' 100cm ',
+                        TmmsConstants::payloadLabelKey(1) => ' Laenge ',
+                        TmmsConstants::payloadValueKey(2) => 'rot',
+                        TmmsConstants::payloadLabelKey(2) => 'Farbe',
                     ],
                 ],
             ],
@@ -72,10 +72,10 @@ final class TmmsPayloadReaderTest extends TestCase
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
         self::assertSame('1', $result[TmmsConstants::PAYLOAD_TMMS_ACTIVE]);
-        self::assertSame('100cm', $result[self::payloadValueKey(1)]);
-        self::assertSame('Laenge', $result[self::payloadLabelKey(1)]);
-        self::assertSame('rot', $result[self::payloadValueKey(2)]);
-        self::assertSame('Farbe', $result[self::payloadLabelKey(2)]);
+        self::assertSame('100cm', $result[TmmsConstants::payloadValueKey(1)]);
+        self::assertSame('Laenge', $result[TmmsConstants::payloadLabelKey(1)]);
+        self::assertSame('rot', $result[TmmsConstants::payloadValueKey(2)]);
+        self::assertSame('Farbe', $result[TmmsConstants::payloadLabelKey(2)]);
     }
 
     #[Test]
@@ -86,10 +86,10 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        self::payloadValueKey(1) => '100cm',
-                        self::payloadLabelKey(1) => 'Laenge',
-                        self::payloadValueKey(2) => '',
-                        self::payloadLabelKey(2) => 'Leer',
+                        TmmsConstants::payloadValueKey(1) => '100cm',
+                        TmmsConstants::payloadLabelKey(1) => 'Laenge',
+                        TmmsConstants::payloadValueKey(2) => '',
+                        TmmsConstants::payloadLabelKey(2) => 'Leer',
                     ],
                 ],
             ],
@@ -97,9 +97,9 @@ final class TmmsPayloadReaderTest extends TestCase
 
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
-        self::assertArrayHasKey(self::payloadValueKey(1), $result);
-        self::assertArrayNotHasKey(self::payloadValueKey(2), $result);
-        self::assertArrayNotHasKey(self::payloadLabelKey(2), $result);
+        self::assertArrayHasKey(TmmsConstants::payloadValueKey(1), $result);
+        self::assertArrayNotHasKey(TmmsConstants::payloadValueKey(2), $result);
+        self::assertArrayNotHasKey(TmmsConstants::payloadLabelKey(2), $result);
     }
 
     #[Test]
@@ -110,8 +110,8 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        self::payloadValueKey(1) => '<script>alert("xss")</script>100cm',
-                        self::payloadLabelKey(1) => '<b>Laenge</b>',
+                        TmmsConstants::payloadValueKey(1) => '<script>alert("xss")</script>100cm',
+                        TmmsConstants::payloadLabelKey(1) => '<b>Laenge</b>',
                     ],
                 ],
             ],
@@ -119,8 +119,8 @@ final class TmmsPayloadReaderTest extends TestCase
 
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
-        self::assertSame('alert("xss")100cm', $result[self::payloadValueKey(1)]);
-        self::assertSame('Laenge', $result[self::payloadLabelKey(1)]);
+        self::assertSame('alert("xss")100cm', $result[TmmsConstants::payloadValueKey(1)]);
+        self::assertSame('Laenge', $result[TmmsConstants::payloadLabelKey(1)]);
     }
 
     #[Test]
@@ -131,7 +131,7 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-999' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        self::payloadValueKey(1) => '100cm',
+                        TmmsConstants::payloadValueKey(1) => '100cm',
                     ],
                 ],
             ],
@@ -181,9 +181,9 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        self::payloadValueKey(1) => ['nested' => 'array'],
-                        self::payloadValueKey(2) => '50cm',
-                        self::payloadLabelKey(2) => ['also' => 'array'],
+                        TmmsConstants::payloadValueKey(1) => ['nested' => 'array'],
+                        TmmsConstants::payloadValueKey(2) => '50cm',
+                        TmmsConstants::payloadLabelKey(2) => ['also' => 'array'],
                     ],
                 ],
             ],
@@ -191,9 +191,9 @@ final class TmmsPayloadReaderTest extends TestCase
 
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
-        self::assertArrayNotHasKey(self::payloadValueKey(1), $result);
-        self::assertSame('50cm', $result[self::payloadValueKey(2)]);
-        self::assertSame('', $result[self::payloadLabelKey(2)]);
+        self::assertArrayNotHasKey(TmmsConstants::payloadValueKey(1), $result);
+        self::assertSame('50cm', $result[TmmsConstants::payloadValueKey(2)]);
+        self::assertSame('', $result[TmmsConstants::payloadLabelKey(2)]);
     }
 
     #[Test]
@@ -205,8 +205,8 @@ final class TmmsPayloadReaderTest extends TestCase
                 'product-123' => [
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-                        self::payloadValueKey(1) => $longValue,
-                        self::payloadLabelKey(1) => 'Laenge',
+                        TmmsConstants::payloadValueKey(1) => $longValue,
+                        TmmsConstants::payloadLabelKey(1) => 'Laenge',
                     ],
                 ],
             ],
@@ -214,9 +214,9 @@ final class TmmsPayloadReaderTest extends TestCase
 
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
-        self::assertArrayHasKey(self::payloadValueKey(1), $result);
+        self::assertArrayHasKey(TmmsConstants::payloadValueKey(1), $result);
         // Sanitization-Layer kappt bei MAX_VALUE_LENGTH (2000)
-        self::assertSame(2000, mb_strlen($result[self::payloadValueKey(1)]));
+        self::assertSame(2000, mb_strlen($result[TmmsConstants::payloadValueKey(1)]));
     }
 
     // --- readSessionData ---
@@ -235,55 +235,42 @@ final class TmmsPayloadReaderTest extends TestCase
     #[Test]
     public function readSessionDataExtractsFieldsCorrectly(): void
     {
-        $sessionData = [
-            self::sessionKey(1, 'SW10001') => [
+        $session = $this->buildSession([
+            TmmsConstants::sessionKey(1, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => '100cm',
                 TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
                 TmmsConstants::SESSION_PLACEHOLDER_KEY => 'z.B. 100cm',
                 TmmsConstants::SESSION_FIELDTYPE_KEY => 'text',
             ],
-            self::sessionKey(2, 'SW10001') => [
+            TmmsConstants::sessionKey(2, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => 'rot',
                 TmmsConstants::SESSION_LABEL_KEY => 'Farbe',
             ],
-        ];
-
-        $session = $this->createMock(SessionInterface::class);
-        $session->method('has')->willReturnCallback(
-            fn (string $key): bool => isset($sessionData[$key])
-        );
-        $session->method('get')->willReturnCallback(
-            fn (string $key, mixed $default = null): mixed => $sessionData[$key] ?? $default
-        );
+        ]);
 
         $result = $this->reader->readSessionData($session, 'SW10001');
 
         self::assertCount(2, $result);
         self::assertSame('100cm', $result[1][TmmsConstants::SESSION_VALUE_KEY]);
         self::assertSame('rot', $result[2][TmmsConstants::SESSION_VALUE_KEY]);
+        // Sanitisierter Read-Pfad fuellt fehlende Keys mit '' — nicht mit null
+        self::assertSame('', $result[2][TmmsConstants::SESSION_PLACEHOLDER_KEY]);
+        self::assertSame('', $result[2][TmmsConstants::SESSION_FIELDTYPE_KEY]);
     }
 
     #[Test]
     public function readSessionDataSkipsEmptyValues(): void
     {
-        $sessionData = [
-            self::sessionKey(1, 'SW10001') => [
+        $session = $this->buildSession([
+            TmmsConstants::sessionKey(1, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => '',
                 TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
             ],
-            self::sessionKey(2, 'SW10001') => [
+            TmmsConstants::sessionKey(2, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => 'rot',
                 TmmsConstants::SESSION_LABEL_KEY => 'Farbe',
             ],
-        ];
-
-        $session = $this->createMock(SessionInterface::class);
-        $session->method('has')->willReturnCallback(
-            fn (string $key): bool => isset($sessionData[$key])
-        );
-        $session->method('get')->willReturnCallback(
-            fn (string $key, mixed $default = null): mixed => $sessionData[$key] ?? $default
-        );
+        ]);
 
         $result = $this->reader->readSessionData($session, 'SW10001');
 
@@ -292,18 +279,77 @@ final class TmmsPayloadReaderTest extends TestCase
         self::assertArrayHasKey(2, $result);
     }
 
-    private static function payloadValueKey(int $i): string
+    #[Test]
+    public function readSessionDataStripsHtmlTags(): void
     {
-        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
+        // TMMS-Session enthaelt User-Input und ist nicht zwingend sanitisiert — gleiches
+        // Sanitization-Profil wie der Request-Pfad verhindert stored-XSS und Payload-Bombs.
+        $session = $this->buildSession([
+            TmmsConstants::sessionKey(1, 'SW10001') => [
+                TmmsConstants::SESSION_VALUE_KEY => '<script>alert("xss")</script>100cm',
+                TmmsConstants::SESSION_LABEL_KEY => '<b>Laenge</b>',
+                TmmsConstants::SESSION_PLACEHOLDER_KEY => '<i>z.B. 100cm</i>',
+                TmmsConstants::SESSION_FIELDTYPE_KEY => 'text',
+            ],
+        ]);
+
+        $result = $this->reader->readSessionData($session, 'SW10001');
+
+        self::assertSame('alert("xss")100cm', $result[1][TmmsConstants::SESSION_VALUE_KEY]);
+        self::assertSame('Laenge', $result[1][TmmsConstants::SESSION_LABEL_KEY]);
+        self::assertSame('z.B. 100cm', $result[1][TmmsConstants::SESSION_PLACEHOLDER_KEY]);
+        self::assertSame('text', $result[1][TmmsConstants::SESSION_FIELDTYPE_KEY]);
     }
 
-    private static function payloadLabelKey(int $i): string
+    #[Test]
+    public function readSessionDataCapsOverlongValues(): void
     {
-        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_LABEL_SUFFIX;
+        $session = $this->buildSession([
+            TmmsConstants::sessionKey(1, 'SW10001') => [
+                TmmsConstants::SESSION_VALUE_KEY => str_repeat('a', 5000),
+                TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
+            ],
+        ]);
+
+        $result = $this->reader->readSessionData($session, 'SW10001');
+
+        // Sanitization-Layer kappt auch im Session-Pfad bei MAX_VALUE_LENGTH (2000)
+        self::assertSame(2000, mb_strlen($result[1][TmmsConstants::SESSION_VALUE_KEY]));
     }
 
-    private static function sessionKey(int $i, string $productNumber): string
+    #[Test]
+    public function readSessionDataIgnoresNonStringFieldValues(): void
     {
-        return TmmsConstants::SESSION_KEY_PREFIX . $i . '_' . $productNumber;
+        // Manipulierte Session: Wert als Array → wird leer behandelt → Feld uebersprungen
+        $session = $this->buildSession([
+            TmmsConstants::sessionKey(1, 'SW10001') => [
+                TmmsConstants::SESSION_VALUE_KEY => ['nested' => 'array'],
+                TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
+            ],
+            TmmsConstants::sessionKey(2, 'SW10001') => [
+                TmmsConstants::SESSION_VALUE_KEY => 'rot',
+                TmmsConstants::SESSION_LABEL_KEY => ['also' => 'array'],
+            ],
+        ]);
+
+        $result = $this->reader->readSessionData($session, 'SW10001');
+
+        self::assertArrayNotHasKey(1, $result);
+        self::assertSame('rot', $result[2][TmmsConstants::SESSION_VALUE_KEY]);
+        self::assertSame('', $result[2][TmmsConstants::SESSION_LABEL_KEY]);
+    }
+
+    /** @param array<string, array<string, mixed>> $sessionData */
+    private function buildSession(array $sessionData): SessionInterface
+    {
+        $session = $this->createMock(SessionInterface::class);
+        $session->method('has')->willReturnCallback(
+            static fn (string $key): bool => isset($sessionData[$key])
+        );
+        $session->method('get')->willReturnCallback(
+            static fn (string $key, mixed $default = null): mixed => $sessionData[$key] ?? $default
+        );
+
+        return $session;
     }
 }

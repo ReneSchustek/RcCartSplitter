@@ -58,13 +58,13 @@ final class OrderInputCorrectionServiceTest extends TestCase
 
         $itemA = $this->createLineItem($idA, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            self::payloadValueKey(1) => '100cm',
-            self::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadValueKey(1) => '100cm',
+            TmmsConstants::payloadLabelKey(1) => 'Laenge',
         ]);
         $itemB = $this->createLineItem($idB, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            self::payloadValueKey(1) => '200cm',
-            self::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadValueKey(1) => '200cm',
+            TmmsConstants::payloadLabelKey(1) => 'Laenge',
         ]);
 
         $fresh = new OrderLineItemCollection([$itemA, $itemB]);
@@ -101,8 +101,8 @@ final class OrderInputCorrectionServiceTest extends TestCase
         self::assertCount(4, $capturedParams ?? [], 'Pro LineItem ein id- und ein cf-Parameter');
 
         // In-Memory-Update wurde durchgefuehrt
-        self::assertSame('100cm', $itemA->getCustomFields()['tmms_customer_input_1_value'] ?? null);
-        self::assertSame('200cm', $itemB->getCustomFields()['tmms_customer_input_1_value'] ?? null);
+        self::assertSame('100cm', $itemA->getCustomFields()[TmmsConstants::customFieldValueKey(1)] ?? null);
+        self::assertSame('200cm', $itemB->getCustomFields()[TmmsConstants::customFieldValueKey(1)] ?? null);
     }
 
     #[Test]
@@ -111,7 +111,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $id = Uuid::randomHex();
         $item = $this->createLineItem($id, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            self::payloadValueKey(1) => '100cm',
+            TmmsConstants::payloadValueKey(1) => '100cm',
         ]);
         $fresh = new OrderLineItemCollection([$item]);
 
@@ -141,7 +141,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $id = Uuid::randomHex();
         $fresh = $this->createLineItem($id, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            self::payloadValueKey(1) => '100cm',
+            TmmsConstants::payloadValueKey(1) => '100cm',
         ]);
         $memory = $this->createLineItem($id, payload: []);
 
@@ -155,7 +155,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
 
         $this->service->correctLineItems($freshCol, $memoryCol);
 
-        self::assertSame('100cm', $memory->getCustomFields()['tmms_customer_input_1_value'] ?? null);
+        self::assertSame('100cm', $memory->getCustomFields()[TmmsConstants::customFieldValueKey(1)] ?? null);
     }
 
     // --- correctLineItems: Mapping aus Payload-Schluesseln ---
@@ -165,19 +165,19 @@ final class OrderInputCorrectionServiceTest extends TestCase
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            self::payloadValueKey(1) => '100cm',
-            self::payloadLabelKey(1) => 'Laenge',
-            self::payloadValueKey(2) => 'rot',
-            self::payloadLabelKey(2) => 'Farbe',
+            TmmsConstants::payloadValueKey(1) => '100cm',
+            TmmsConstants::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadValueKey(2) => 'rot',
+            TmmsConstants::payloadLabelKey(2) => 'Farbe',
         ];
 
         $customFields = $this->captureWrittenCustomFields($payload);
 
         self::assertNotNull($customFields);
-        self::assertSame('100cm', $customFields['tmms_customer_input_1_value']);
-        self::assertSame('Laenge', $customFields['tmms_customer_input_1_label']);
-        self::assertSame('rot', $customFields['tmms_customer_input_2_value']);
-        self::assertSame('Farbe', $customFields['tmms_customer_input_2_label']);
+        self::assertSame('100cm', $customFields[TmmsConstants::customFieldValueKey(1)]);
+        self::assertSame('Laenge', $customFields[TmmsConstants::customFieldLabelKey(1)]);
+        self::assertSame('rot', $customFields[TmmsConstants::customFieldValueKey(2)]);
+        self::assertSame('Farbe', $customFields[TmmsConstants::customFieldLabelKey(2)]);
     }
 
     #[Test]
@@ -185,15 +185,15 @@ final class OrderInputCorrectionServiceTest extends TestCase
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            self::payloadValueKey(1) => '100cm',
-            self::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadValueKey(1) => '100cm',
+            TmmsConstants::payloadLabelKey(1) => 'Laenge',
         ];
 
         $customFields = $this->captureWrittenCustomFields($payload, ['some_other_field' => 'value']);
 
         self::assertNotNull($customFields);
         self::assertSame('value', $customFields['some_other_field']);
-        self::assertSame('100cm', $customFields['tmms_customer_input_1_value']);
+        self::assertSame('100cm', $customFields[TmmsConstants::customFieldValueKey(1)]);
     }
 
     #[Test]
@@ -201,17 +201,17 @@ final class OrderInputCorrectionServiceTest extends TestCase
     {
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
-            self::payloadValueKey(1) => '100cm',
-            self::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadValueKey(1) => '100cm',
+            TmmsConstants::payloadLabelKey(1) => 'Laenge',
         ];
 
         $customFields = $this->captureWrittenCustomFields($payload);
 
         self::assertNotNull($customFields);
         // Felder 2..INPUT_COUNT sind leer befuellt
-        self::assertSame('', $customFields['tmms_customer_input_2_value']);
-        self::assertSame('', $customFields['tmms_customer_input_2_label']);
-        self::assertSame('', $customFields['tmms_customer_input_5_value']);
+        self::assertSame('', $customFields[TmmsConstants::customFieldValueKey(2)]);
+        self::assertSame('', $customFields[TmmsConstants::customFieldLabelKey(2)]);
+        self::assertSame('', $customFields[TmmsConstants::customFieldValueKey(5)]);
     }
 
     // --- correctLineItems: Mapping aus Session-Daten ---
@@ -251,12 +251,12 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $customFields = $this->captureWrittenCustomFields($payload);
 
         self::assertNotNull($customFields);
-        self::assertSame('100cm', $customFields['tmms_customer_input_1_value']);
-        self::assertSame('Laenge', $customFields['tmms_customer_input_1_label']);
-        self::assertSame('z.B. 100cm', $customFields['tmms_customer_input_1_placeholder']);
-        self::assertSame('text', $customFields['tmms_customer_input_1_fieldtype']);
-        self::assertSame('rot', $customFields['tmms_customer_input_3_value']);
-        self::assertSame('select', $customFields['tmms_customer_input_3_fieldtype']);
+        self::assertSame('100cm', $customFields[TmmsConstants::customFieldValueKey(1)]);
+        self::assertSame('Laenge', $customFields[TmmsConstants::customFieldLabelKey(1)]);
+        self::assertSame('z.B. 100cm', $customFields[TmmsConstants::customFieldPlaceholderKey(1)]);
+        self::assertSame('text', $customFields[TmmsConstants::customFieldFieldtypeKey(1)]);
+        self::assertSame('rot', $customFields[TmmsConstants::customFieldValueKey(3)]);
+        self::assertSame('select', $customFields[TmmsConstants::customFieldFieldtypeKey(3)]);
     }
 
     #[Test]
@@ -275,7 +275,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
 
         self::assertNotNull($customFields);
         self::assertSame('existing_value', $customFields['existing_key']);
-        self::assertSame('100cm', $customFields['tmms_customer_input_1_value']);
+        self::assertSame('100cm', $customFields[TmmsConstants::customFieldValueKey(1)]);
     }
 
     #[Test]
@@ -290,8 +290,8 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $customFields = $this->captureWrittenCustomFields($payload);
 
         self::assertNotNull($customFields);
-        self::assertSame('', $customFields['tmms_customer_input_1_value']);
-        self::assertSame('', $customFields['tmms_customer_input_1_label']);
+        self::assertSame('', $customFields[TmmsConstants::customFieldValueKey(1)]);
+        self::assertSame('', $customFields[TmmsConstants::customFieldLabelKey(1)]);
     }
 
     /** @param array<string, mixed> $payload */
@@ -359,13 +359,4 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $this->service->correctLineItems($fresh, null);
     }
 
-    private static function payloadValueKey(int $i): string
-    {
-        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_VALUE_SUFFIX;
-    }
-
-    private static function payloadLabelKey(int $i): string
-    {
-        return TmmsConstants::PAYLOAD_FIELD_PREFIX . $i . TmmsConstants::PAYLOAD_FIELD_LABEL_SUFFIX;
-    }
 }
