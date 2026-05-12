@@ -40,6 +40,15 @@ final class TmmsConstants
     public const CUSTOM_FIELD_PLACEHOLDER_SUFFIX = '_placeholder';
     public const CUSTOM_FIELD_FIELDTYPE_SUFFIX = '_fieldtype';
 
+    /** Produkt-Custom-Field für den TMMS-Hinweistext-Override (Scope: Produkt) */
+    public const PRODUCT_TMMS_INFO_MESSAGE_FIELD = 'rc_cart_splitter_tmms_info_message';
+
+    /** Kategorie-Custom-Field für den TMMS-Hinweistext-Override (Scope: Kategorie-Chain) */
+    public const CATEGORY_TMMS_INFO_MESSAGE_FIELD = 'rc_cart_splitter_cat_tmms_info_message';
+
+    /** Plugin-Config-Schlüssel für den globalen TMMS-Hinweistext-Default */
+    public const CONFIG_TMMS_INFO_MESSAGE = 'RcCartSplitter.config.tmmsInformationMessage';
+
     public static function payloadValueKey(int $index): string
     {
         return self::PAYLOAD_FIELD_PREFIX . $index . self::PAYLOAD_FIELD_VALUE_SUFFIX;

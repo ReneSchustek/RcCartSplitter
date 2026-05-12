@@ -47,5 +47,29 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
+        <!-- TMMS-Hinweistext-Resolver (Produkt > Kategorie > Plugin-Config > Snippet) -->
+
+        <service id="Ruhrcoder\RcCartSplitter\Service\CategoryChainLoader">
+            <argument type="service" id="category.repository"/>
+        </service>
+
+        <service id="Ruhrcoder\RcCartSplitter\Service\CategoryChainLoaderInterface"
+                 alias="Ruhrcoder\RcCartSplitter\Service\CategoryChainLoader"/>
+
+        <service id="Ruhrcoder\RcCartSplitter\Service\TmmsInformationMessageResolver">
+            <argument type="service" id="Ruhrcoder\RcCartSplitter\Service\CategoryChainLoaderInterface"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="logger"/>
+            <tag name="monolog.logger" channel="rc_cart_splitter"/>
+        </service>
+
+        <service id="Ruhrcoder\RcCartSplitter\Service\TmmsInformationMessageResolverInterface"
+                 alias="Ruhrcoder\RcCartSplitter\Service\TmmsInformationMessageResolver"/>
+
+        <service id="Ruhrcoder\RcCartSplitter\Storefront\Subscriber\TmmsInformationMessageSubscriber">
+            <argument type="service" id="Ruhrcoder\RcCartSplitter\Service\TmmsInformationMessageResolverInterface"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
     </services>
 </container>

@@ -1,3 +1,10 @@
+# 2.1.0
+
+- Hinzugefügt: TMMS-Hinweistext frei konfigurierbar in drei Scopes — Produkt-Custom-Field `rc_cart_splitter_tmms_info_message`, Kategorie-Custom-Field `rc_cart_splitter_cat_tmms_info_message` (Kategorie-Chain), Plugin-Konfiguration `RcCartSplitter.config.tmmsInformationMessage`. Reihenfolge: Produkt > Kategorie > Plugin-Config > Snippet-Default (`rc-cart-splitter.tmmsInformationMessage`). Der Text ersetzt den TMMS-Default-Hinweis unter den Eingabefeldern, der mit aktivem RcCartSplitter fachlich falsch war ("vorherige Eingabe wird überschrieben"). Twig-Decoration auf den Block `buy_widget_configurator_include_customerinput_informationmessage_content`; Container/Sichtbarkeit/Icon bleiben beim TMMS-Plugin.
+- Hinzugefügt: Service `TmmsInformationMessageResolver` mit eigenem `CategoryChainLoader` (kein Cross-Plugin-Coupling) und Scope-Logging im Channel `rc_cart_splitter`. Aufgelöster Text wird über die Page-Extension `rcCartSplitterTmmsInfo` an Produkt- und Quickview-Page gehängt.
+- Hinzugefügt: Plugin-Migrations für die beiden Custom-Field-Sets `rc_cart_splitter` (Produkt) und `rc_cart_splitter_category` (Kategorie), jeweils mit Textarea-Feldern und mehrsprachigen Labels.
+- Geändert: Plugin-Template-Priorität auf `-1` (Default 0), damit der TMMS-Block-Override deterministisch greift.
+
 # 2.0.2
 
 - Behoben: TMMS-Eingaben werden bei Split-Positionen (z. B. mehrere Bodenprofile mit unterschiedlichem Gehrungsschnitt und Längen-Suffix aus RcDynamicPrice) nicht mehr durch Session-Werte überschrieben. Der Session-Fallback im Input-Provider liefert jetzt dieselbe Payload-Form wie der JS-Pfad (`rcTmmsActive` plus `rcTmmsField<N>Value`/`Label`), und der Display-Subscriber entfernt geleakte TMMS-Extensions für Felder ohne Position-Wert. Betrifft alle TMMS-Feldtypen — Select-Felder besonders.

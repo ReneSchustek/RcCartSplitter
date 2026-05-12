@@ -1,5 +1,6 @@
 {
     "rc-cart-splitter": {
-        "lineItemInputs": "Customer inputs"
+        "lineItemInputs": "Customer inputs",
+        "tmmsInformationMessage": "Enter different values for differing needs — each unique input creates its own cart line. Identical inputs increase the quantity of the existing line."
     }
 }
