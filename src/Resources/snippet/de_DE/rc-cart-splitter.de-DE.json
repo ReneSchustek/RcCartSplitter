@@ -1,5 +1,6 @@
 {
     "rc-cart-splitter": {
-        "lineItemInputs": "Kundeneingaben"
+        "lineItemInputs": "Kundeneingaben",
+        "tmmsInformationMessage": "Geben Sie bei unterschiedlichen Bedarfen jeweils abweichende Werte ein — pro abweichender Eingabe entsteht eine eigene Warenkorbposition. Identische Eingaben erhöhen die Menge der bestehenden Position."
     }
 }

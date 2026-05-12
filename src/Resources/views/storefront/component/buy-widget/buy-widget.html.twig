@@ -1,0 +1,22 @@
+{% sw_extends '@Storefront/storefront/component/buy-widget/buy-widget.html.twig' %}
+
+{#
+  Überschreibt den TMMS-Hinweistext-Inhalt unter den Eingabefeldern.
+  Quelle: Page-Extension `rcCartSplitterTmmsInfo` (Resolver Produkt -> Kategorie -> Plugin-Config),
+  Fallback: Plugin-Snippet. Container/Sichtbarkeit/Icon bleiben beim TMMS-Plugin.
+
+  Plugin-Loader-Priority 1000 hängt RcCartSplitter als OUTERMOST in die Twig-Chain,
+  sodass dieser Block-Override TMMS' Standard sicher überschreibt.
+#}
+{% block buy_widget_configurator_include_customerinput_informationmessage_content %}
+    {% set rcCartSplitterTmmsInfo = page.extensions.rcCartSplitterTmmsInfo ?? null %}
+    {% set rcCartSplitterTmmsMessage = rcCartSplitterTmmsInfo
+        ? rcCartSplitterTmmsInfo.message
+        : null %}
+    {% set rcCartSplitterTmmsMessage = rcCartSplitterTmmsMessage
+        ?: ('rc-cart-splitter.tmmsInformationMessage'|trans|sw_sanitize) %}
+
+    <div class="alert-content-container">
+        {{ rcCartSplitterTmmsMessage|nl2br }}
+    </div>
+{% endblock %}

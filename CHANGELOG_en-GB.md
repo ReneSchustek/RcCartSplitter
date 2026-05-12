@@ -1,3 +1,10 @@
+# 2.1.0
+
+- Added: TMMS hint text now freely configurable across three scopes — product custom field `rc_cart_splitter_tmms_info_message`, category custom field `rc_cart_splitter_cat_tmms_info_message` (category chain), plugin configuration `RcCartSplitter.config.tmmsInformationMessage`. Resolution order: product > category > plugin config > snippet default (`rc-cart-splitter.tmmsInformationMessage`). Replaces the TMMS default hint ("previous input will be overwritten"), which was factually wrong with RcCartSplitter active. Twig decoration on `buy_widget_configurator_include_customerinput_informationmessage_content`; container, visibility and icon remain owned by the TMMS plugin.
+- Added: `TmmsInformationMessageResolver` service with its own `CategoryChainLoader` (no cross-plugin coupling) and scope logging on channel `rc_cart_splitter`. The resolved text is attached to the product and quick-view page via the `rcCartSplitterTmmsInfo` page extension.
+- Added: Plugin migrations for the two custom-field sets `rc_cart_splitter` (product) and `rc_cart_splitter_category` (category), each with translated textarea fields.
+- Changed: Plugin template priority set to `-1` (default 0) so the TMMS block override wins deterministically.
+
 # 2.0.2
 
 - Fixed: TMMS inputs on split positions (e.g. multiple floor-profile items with different mitre cuts and a length suffix from RcDynamicPrice) are no longer overwritten by session values. The session fallback in the input provider now emits the same payload shape as the JS path (`rcTmmsActive` plus `rcTmmsField<N>Value`/`Label`), and the display subscriber removes leaked TMMS extensions for fields the position did not fill. Affects all TMMS field types — select fields in particular.
