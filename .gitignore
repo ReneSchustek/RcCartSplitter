@@ -34,3 +34,6 @@ coverage/
 CLAUDE.md
 brief-template.md
 .gitignore-template
+
+# composer.lock — Library-Plugin (php.md:101)
+composer.lock
