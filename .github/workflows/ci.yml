@@ -34,8 +34,8 @@ jobs:
       - name: Abhängigkeiten installieren
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Security-Audit (Produktiv-Stack)
-        run: composer audit --no-dev
+      - name: Security-Audit
+        run: composer audit --no-interaction
 
       - name: Code-Style prüfen
         run: composer cs-check
@@ -115,5 +115,5 @@ jobs:
       - name: Coverage-Schwellen prüfen
         run: composer coverage:gate
 
-      - name: Security-Audit (Produktiv-Stack)
-        run: composer audit --no-dev
+      - name: Security-Audit
+        run: composer audit --no-interaction
