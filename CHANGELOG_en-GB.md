@@ -1,3 +1,7 @@
+# 2.1.1
+
+- Fixed: For products with only TMMS customer-input fields (no additional suffix plugin such as RcDynamicPrice or RcColorPicker), two add-to-cart actions with different inputs were incorrectly merged into a single line item with increased quantity. Root cause: the line-item ID was only recalculated reactively on `change`/`input` events of the TMMS inputs — for select fields, datepickers and programmatically set values these events do not fire reliably, leaving the ID stuck at its initial value (the product UUID). Recalculation now also runs unconditionally in the submit capture handler, so the ID always reflects the current input values when the item is added. Setups with dynamic pricing or colour selection were unaffected thanks to the `rcSuffixChanged` event.
+
 # 2.1.0
 
 - Added: TMMS hint text now freely configurable across three scopes — product custom field `rc_cart_splitter_tmms_info_message`, category custom field `rc_cart_splitter_cat_tmms_info_message` (category chain), plugin configuration `RcCartSplitter.config.tmmsInformationMessage`. Resolution order: product > category > plugin config > snippet default (`rc-cart-splitter.tmmsInformationMessage`). Replaces the TMMS default hint ("previous input will be overwritten"), which was factually wrong with RcCartSplitter active. Twig decoration on `buy_widget_configurator_include_customerinput_informationmessage_content`; container, visibility and icon remain owned by the TMMS plugin.

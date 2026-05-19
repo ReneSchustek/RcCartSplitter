@@ -120,6 +120,11 @@ export default class CartSplitterPlugin extends Plugin {
 
     // Capture-Phase vor Shopware-AddToCartPlugin: Werte muessen Teil von FormData(form) sein
     _injectHiddenFields() {
+        // Defensiv die ID neu berechnen — input/change feuern bei Select, Datepicker
+        // und programmatisch gesetzten Werten nicht zuverlaessig, ohne Suffix-Plugin
+        // (z. B. RcDynamicPrice) bliebe die ID dann auf dem Initial-Wert haengen.
+        this._updateLineItemId();
+
         this._form.querySelectorAll('input[data-rc-tmms]').forEach(el => el.remove());
 
         let hasAnyValue = false;

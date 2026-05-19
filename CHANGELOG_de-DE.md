@@ -1,3 +1,7 @@
+# 2.1.1
+
+- Behoben: Bei Produkten mit ausschließlich TMMS-Kundenfeldern (kein zusätzliches Suffix-Plugin wie RcDynamicPrice oder RcColorPicker) wurden zwei Adds mit unterschiedlichen Eingaben fälschlich zu einer Position mit erhöhter Menge zusammengefasst. Ursache: Die LineItem-ID wurde nur reaktiv auf `change`/`input`-Events der TMMS-Inputs neu berechnet — bei Select-Feldern, Datepickern und programmatisch gesetzten Werten feuern diese Events nicht zuverlässig, sodass die ID auf dem Initial-Wert (Produkt-UUID) hängen blieb. Die Re-Berechnung läuft jetzt zusätzlich unconditional im Submit-Capture-Handler — die ID entspricht beim Hinzufügen immer den aktuellen Eingabewerten. Setups mit dynamischem Preis oder Farbauswahl waren wegen des `rcSuffixChanged`-Events nicht betroffen.
+
 # 2.1.0
 
 - Hinzugefügt: TMMS-Hinweistext frei konfigurierbar in drei Scopes — Produkt-Custom-Field `rc_cart_splitter_tmms_info_message`, Kategorie-Custom-Field `rc_cart_splitter_cat_tmms_info_message` (Kategorie-Chain), Plugin-Konfiguration `RcCartSplitter.config.tmmsInformationMessage`. Reihenfolge: Produkt > Kategorie > Plugin-Config > Snippet-Default (`rc-cart-splitter.tmmsInformationMessage`). Der Text ersetzt den TMMS-Default-Hinweis unter den Eingabefeldern, der mit aktivem RcCartSplitter fachlich falsch war ("vorherige Eingabe wird überschrieben"). Twig-Decoration auf den Block `buy_widget_configurator_include_customerinput_informationmessage_content`; Container/Sichtbarkeit/Icon bleiben beim TMMS-Plugin.
