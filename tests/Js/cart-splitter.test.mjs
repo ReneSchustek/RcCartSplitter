@@ -184,3 +184,102 @@ describe('_getTmmsFieldLabel', () => {
         assert.strictEqual(makePlugin()._getTmmsFieldLabel(tmmsForm, 1), 'Farbe');
     });
 });
+
+// Erzeugt ein vollwertiges TMMS-Form-Stub: Value-Input plus optionales Placeholder/Label-Hidden-Field.
+function makeFullTmmsForm({ value = '', placeholder = '', label = '' } = {}) {
+    return {
+        querySelector(selector) {
+            if (selector.startsWith('[name^="tmms-customer-input-value-')) {
+                return { value };
+            }
+            const named = selector.match(/name="tmms-customer-input-(placeholder|label)-\d+"/);
+            if (named) {
+                const v = named[1] === 'placeholder' ? placeholder : label;
+                return v === '' && named[1] === 'placeholder' ? { value: '' } : { value: v };
+            }
+            return null;
+        },
+    };
+}
+
+// Minimal-DOM-Stubs nur fuer _injectHiddenFields(): kein jsdom, nur das, was die Methode braucht.
+function withDom(tmmsForms, fn) {
+    const previousDocument = globalThis.document;
+    globalThis.document = {
+        getElementById(id) {
+            return tmmsForms[id] ?? null;
+        },
+        createElement() {
+            return {
+                type: '',
+                name: '',
+                value: '',
+                _attrs: {},
+                setAttribute(key, value) { this._attrs[key] = value; },
+            };
+        },
+    };
+    try {
+        return fn();
+    } finally {
+        globalThis.document = previousDocument;
+    }
+}
+
+function makePluginWithForm(productId = PRODUCT_ID, dataset = {}) {
+    const instance = Object.create(CartSplitterPlugin.prototype);
+    instance._productId = productId;
+    const appended = [];
+    instance._form = {
+        dataset,
+        appendChild(node) { appended.push(node); },
+        querySelectorAll() { return []; },
+    };
+    instance._form._appended = appended;
+    instance._idInput = { value: productId };
+    instance._payloadPrefix = 'lineItems[' + productId + '][payload]';
+    return instance;
+}
+
+describe('_injectHiddenFields — Submit-Capture-Pfad', () => {
+    // Der Bugfix-Vertrag: ohne vorher gefeuerte change/input-Events (z. B. Select-Wert
+    // programmatisch gesetzt, Datepicker-Update, Race mit dem Submit) muss die LineItem-ID
+    // beim Submit trotzdem auf dem Hash der aktuellen TMMS-Werte landen — sonst merged
+    // Shopware Positionen, die fachlich getrennt gehoeren.
+    test('berechnet die LineItem-ID neu, auch wenn vorher kein input/change gefeuert hat', () => {
+        const plugin = makePluginWithForm();
+        const tmmsForm = makeFullTmmsForm({ value: 'Wert A', placeholder: 'Laenge', label: 'Laenge' });
+        const initialId = plugin._idInput.value;
+
+        withDom({ ['productCustomerInputForm-' + PRODUCT_ID + '-1']: tmmsForm }, () => {
+            plugin._injectHiddenFields();
+        });
+
+        assert.notStrictEqual(plugin._idInput.value, initialId, 'ID muss sich gegenueber dem Initial-Wert geaendert haben');
+        assert.match(plugin._idInput.value, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    });
+
+    test('unterschiedliche TMMS-Werte ergeben unterschiedliche IDs (Differenzierungs-Vertrag)', () => {
+        const pluginA = makePluginWithForm();
+        const pluginB = makePluginWithForm();
+
+        withDom({ ['productCustomerInputForm-' + PRODUCT_ID + '-1']: makeFullTmmsForm({ value: 'Wert A', label: 'Laenge' }) }, () => {
+            pluginA._injectHiddenFields();
+        });
+        withDom({ ['productCustomerInputForm-' + PRODUCT_ID + '-1']: makeFullTmmsForm({ value: 'Wert B', label: 'Laenge' }) }, () => {
+            pluginB._injectHiddenFields();
+        });
+
+        assert.notStrictEqual(pluginA._idInput.value, pluginB._idInput.value);
+    });
+
+    test('faellt ohne TMMS-Werte und ohne Suffix auf die Produkt-ID zurueck (kein unnoetiger Split)', () => {
+        const plugin = makePluginWithForm();
+
+        withDom({}, () => {
+            plugin._injectHiddenFields();
+        });
+
+        assert.strictEqual(plugin._idInput.value, PRODUCT_ID);
+    });
+});
