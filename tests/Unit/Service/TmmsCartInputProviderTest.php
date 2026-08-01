@@ -90,7 +90,7 @@ final class TmmsCartInputProviderTest extends TestCase
         $lineItem = $this->createLineItem($productId);
         $event = $this->createEvent($productId, $lineItem);
 
-        // Session/Connection duerfen NICHT gefragt werden, wenn Request-Payload reicht
+        // Session/Connection dürfen NICHT gefragt werden, wenn Request-Payload reicht
         $this->connection->expects(self::never())->method('fetchOne');
 
         $result = $this->provider->provide($event);

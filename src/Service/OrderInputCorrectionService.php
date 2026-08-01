@@ -22,7 +22,7 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
     }
 
     // DBAL umgeht DAL-Events, damit TMMS unsere Korrektur nicht per EntityWrittenEvent zurückschreibt;
-    // Batch-CASE-WHEN in einer Transaktion vermeidet N Roundtrips bei grossen Bestellungen.
+    // Batch-CASE-WHEN in einer Transaktion vermeidet N Roundtrips bei großen Bestellungen.
     public function correctLineItems(
         OrderLineItemCollection $freshItems,
         ?OrderLineItemCollection $memoryItems,

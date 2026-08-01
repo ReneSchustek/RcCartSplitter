@@ -47,7 +47,7 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
 
         $this->dispatch($lineItem);
 
-        // Promotion-Items duerfen nicht berührt werden — TMMS-Logik ist produktspezifisch.
+        // Promotion-Items dürfen nicht berührt werden — TMMS-Logik ist produktspezifisch.
         self::assertFalse($lineItem->hasExtension(TmmsConstants::extensionName(1)));
     }
 
@@ -149,7 +149,7 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
     #[Test]
     public function onCartPageLoadedDoesNotRemoveExtensionsInLegacySessionFallback(): void
     {
-        // Ohne rcTmmsActive duerfen wir keine Extensions entfernen — wir wissen nicht,
+        // Ohne rcTmmsActive dürfen wir keine Extensions entfernen — wir wissen nicht,
         // ob der Payload autoritativ ist. Defensive Variante: nur ergänzen.
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_INPUTS, [

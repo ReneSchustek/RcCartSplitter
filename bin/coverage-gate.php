@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 // Liest den Clover-XML-Report aus dem PHPUnit-Coverage-Lauf und prüft pro
 // Verzeichnis-Präfix eine aggregierte Mindest-Line-Coverage. Aggregat statt
-// Per-File: einzelne Helfer-Klassen mit niedriger Quote duerfen den Schnitt
-// nicht reissen, wenn der Rest gut getestet ist.
+// Per-File: einzelne Helfer-Klassen mit niedriger Quote dürfen den Schnitt
+// nicht reißen, wenn der Rest gut getestet ist.
 
 $coveragePath = dirname(__DIR__) . '/coverage.xml';
 

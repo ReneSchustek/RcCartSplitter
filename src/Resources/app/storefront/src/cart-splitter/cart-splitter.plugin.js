@@ -4,8 +4,8 @@ import Plugin from 'src/plugin-system/plugin.class';
 // dieses Plugin sammelt sie pro Produkt, leitet daraus eine deterministische LineItem-ID ab und
 // injiziert die Werte als Hidden-Felder, damit der Cart sie ohne weiteren Round-Trip anzeigen kann.
 // Suffix-Daten sind generisch: jedes Plugin schreibt seinen Wert in form.dataset.rc*Suffix und meldet
-// die Aenderung über das gemeinsame CustomEvent rcSuffixChanged. Neue Suffix-Plugins
-// brauchen keine Code-Aenderung in dieser Datei mehr.
+// die Änderung über das gemeinsame CustomEvent rcSuffixChanged. Neue Suffix-Plugins
+// brauchen keine Code-Änderung in dieser Datei mehr.
 // Erweiterungs-Howto: README, Abschnitt "Erweiterung: weitere Suffix-Plugins".
 export default class CartSplitterPlugin extends Plugin {
 
@@ -14,7 +14,7 @@ export default class CartSplitterPlugin extends Plugin {
 
     // Generisches Suffix-Event aus dem Plugin-Interaktionsprotokoll. Bewusst neutraler Namespace —
     // kein Plugin owned den Namen, jedes Suffix-Plugin (RcColorPicker, RcDynamicPrice, ...) feuert ihn
-    // nach jeder Wert-Aenderung.
+    // nach jeder Wert-Änderung.
     static SUFFIX_CHANGED_EVENT = 'rcSuffixChanged';
 
     init() {
@@ -36,7 +36,7 @@ export default class CartSplitterPlugin extends Plugin {
             return;
         }
 
-        // Markiert dieses Form: andere Ruhrcoder-Plugins duerfen die LineItem-ID nicht mehr ändern
+        // Markiert dieses Form: andere Ruhrcoder-Plugins dürfen die LineItem-ID nicht mehr ändern
         this._form.dataset.rcIdController = 'true';
 
         this._payloadPrefix = 'lineItems[' + this._productId + '][payload]';
@@ -73,7 +73,7 @@ export default class CartSplitterPlugin extends Plugin {
             input.addEventListener('input', this._boundUpdate);
         });
 
-        // Ein einziger Listener: jedes Suffix-Plugin signalisiert seine Aenderung über das generische Event.
+        // Ein einziger Listener: jedes Suffix-Plugin signalisiert seine Änderung über das generische Event.
         this._form.addEventListener(CartSplitterPlugin.SUFFIX_CHANGED_EVENT, this._boundSuffixChanged);
 
         // capture: true → feuert VOR Shopware-AddToCartPlugin (das auf bubble lauscht)
