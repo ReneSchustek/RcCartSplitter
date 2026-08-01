@@ -1,4 +1,4 @@
-# Normalisiert Line-Endings unabhaengig vom lokalen core.autocrlf-Setting:
+# Normalisiert Line-Endings unabhängig vom lokalen core.autocrlf-Setting:
 # alle Text-Files landen mit LF im Index und im Working-Tree. PowerShell-
 # Skripte bleiben CRLF, weil Windows-Hosts sie nativ ausführen.
 
@@ -24,7 +24,7 @@
 *.bat       text eol=crlf
 *.cmd       text eol=crlf
 
-# Binaerdateien — kein Whitespace-Diff, kein EOL-Mangling
+# Binärdateien — kein Whitespace-Diff, kein EOL-Mangling
 *.png       binary
 *.jpg       binary
 *.jpeg      binary

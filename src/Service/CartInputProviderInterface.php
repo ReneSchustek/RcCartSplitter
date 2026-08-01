@@ -6,8 +6,8 @@ namespace Ruhrcoder\RcCartSplitter\Service;
 
 use Shopware\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
 
-// Andockpunkt fuer weitere Input-Plugins: Implementierungen registrieren sich ueber den
-// Tag `rc_cart_splitter.input_provider` und liefern Werte fuer den LineItem-Payload.
+// Andockpunkt für weitere Input-Plugins: Implementierungen registrieren sich über den
+// Tag `rc_cart_splitter.input_provider` und liefern Werte für den LineItem-Payload.
 interface CartInputProviderInterface
 {
     /** @return array<string, mixed> payload-Key => -Value, leer = nichts zu setzen */

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-// Liest den Clover-XML-Report aus dem PHPUnit-Coverage-Lauf und prueft pro
-// Verzeichnis-Praefix eine aggregierte Mindest-Line-Coverage. Aggregat statt
+// Liest den Clover-XML-Report aus dem PHPUnit-Coverage-Lauf und prüft pro
+// Verzeichnis-Präfix eine aggregierte Mindest-Line-Coverage. Aggregat statt
 // Per-File: einzelne Helfer-Klassen mit niedriger Quote duerfen den Schnitt
 // nicht reissen, wenn der Rest gut getestet ist.
 
@@ -56,7 +56,7 @@ $violations = [];
 foreach ($thresholds as $prefix => $threshold) {
     $statements = $aggregate[$prefix]['statements'];
     $covered = $aggregate[$prefix]['covered'];
-    // 0 statements: nichts zu pruefen — als 100% behandeln, kein Verstoss
+    // 0 statements: nichts zu prüfen — als 100% behandeln, kein Verstoss
     $pct = $statements === 0 ? 100.0 : ($covered / $statements) * 100.0;
 
     $label = trim($prefix, '/');

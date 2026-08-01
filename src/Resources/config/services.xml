@@ -19,7 +19,7 @@
         <service id="Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectorInterface"
                  alias="Ruhrcoder\RcCartSplitter\Service\OrderInputCorrectionService"/>
 
-        <!-- Cart-Input-Provider (TMMS-Default; weitere Plugins koennen unter dem Tag andocken) -->
+        <!-- Cart-Input-Provider (TMMS-Default; weitere Plugins können unter dem Tag andocken) -->
 
         <service id="Ruhrcoder\RcCartSplitter\Service\TmmsCartInputProvider">
             <argument type="service" id="request_stack"/>

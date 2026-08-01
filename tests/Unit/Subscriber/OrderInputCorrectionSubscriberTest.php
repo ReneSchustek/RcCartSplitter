@@ -49,7 +49,7 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
     {
         $events = OrderInputCorrectionSubscriber::getSubscribedEvents();
 
-        // Prio -500 ist Pflicht, damit TMMS nicht nach uns ueberschreibt
+        // Prio -500 ist Pflicht, damit TMMS nicht nach uns überschreibt
         self::assertSame(['onOrderPlaced', -500], $events[CheckoutOrderPlacedEvent::class]);
         self::assertSame(['onCheckoutFinish', -500], $events[CheckoutFinishPageLoadedEvent::class]);
     }

@@ -53,7 +53,7 @@ final class CategoryChainLoaderTest extends TestCase
         $loader = new CategoryChainLoader($repo);
         $chain = $loader->loadChain('cat-leaf', Context::createDefaultContext());
 
-        // Erwartet: leaf (primary) zuerst, dann mid (naechster Vorfahr), dann root
+        // Erwartet: leaf (primary) zuerst, dann mid (nächster Vorfahr), dann root
         self::assertCount(3, $chain);
         self::assertSame('cat-leaf', $chain[0]['id']);
         self::assertSame('cat-mid', $chain[1]['id']);
@@ -75,7 +75,7 @@ final class CategoryChainLoaderTest extends TestCase
         $loader = new CategoryChainLoader($repo);
         $chain = $loader->loadChain('cat-leaf', Context::createDefaultContext());
 
-        // Erwartet: leaf + root, mid uebersprungen
+        // Erwartet: leaf + root, mid übersprungen
         self::assertCount(2, $chain);
         self::assertSame('cat-leaf', $chain[0]['id']);
         self::assertSame('cat-root', $chain[1]['id']);

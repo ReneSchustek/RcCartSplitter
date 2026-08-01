@@ -21,7 +21,7 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
     ) {
     }
 
-    // DBAL umgeht DAL-Events, damit TMMS unsere Korrektur nicht per EntityWrittenEvent zurueckschreibt;
+    // DBAL umgeht DAL-Events, damit TMMS unsere Korrektur nicht per EntityWrittenEvent zurückschreibt;
     // Batch-CASE-WHEN in einer Transaktion vermeidet N Roundtrips bei grossen Bestellungen.
     public function correctLineItems(
         OrderLineItemCollection $freshItems,
@@ -47,7 +47,7 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
             });
         } catch (DbalException|\JsonException $e) {
             // Cosmetic-Fix darf den Checkout nicht killen — Fehler aggregiert loggen und abbrechen.
-            // Exception-Objekt statt -message: Monolog ergaenzt Stack-Trace fuer Root-Cause.
+            // Exception-Objekt statt -message: Monolog ergänzt Stack-Trace für Root-Cause.
             $this->logger->error('TMMS-Korrektur fehlgeschlagen', [
                 'lineItemIds' => array_keys($corrections),
                 'count' => count($corrections),
@@ -71,7 +71,7 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
     {
         $payload = $lineItem->getPayload() ?? [];
 
-        // Bevorzugt JS-Payload — Session-Fallback nur fuer Altbestellungen ohne Hidden-Felder
+        // Bevorzugt JS-Payload — Session-Fallback nur für Altbestellungen ohne Hidden-Felder
         $customFields = $this->buildFromPayloadKeys($payload, $lineItem->getCustomFields() ?? []);
         if ($customFields === null) {
             $customFields = $this->buildFromSessionData($payload, $lineItem->getCustomFields() ?? []);

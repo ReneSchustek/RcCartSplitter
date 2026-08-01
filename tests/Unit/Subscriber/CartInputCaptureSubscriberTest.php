@@ -69,7 +69,7 @@ final class CartInputCaptureSubscriberTest extends TestCase
         $lineItem = new LineItem('li-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $subscriber->onBeforeLineItemAdded($this->createEvent($lineItem));
 
-        // Reihenfolge der Provider definiert die Praezedenz — letzter gewinnt.
+        // Reihenfolge der Provider definiert die Präzedenz — letzter gewinnt.
         self::assertSame('second', $lineItem->getPayload()['key'] ?? null);
     }
 

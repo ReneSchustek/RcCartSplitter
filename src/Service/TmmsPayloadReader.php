@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 /** Liest TMMS-Kundeneingaben aus Request-Payload oder Session — sanitisiert an beiden Eingangs-Pfaden gleich. */
 final class TmmsPayloadReader
 {
-    // Schutz vor Payload-Bombs — laengere Eingaben sprengen die JSON-Spalte custom_fields ohnehin
+    // Schutz vor Payload-Bombs — längere Eingaben sprengen die JSON-Spalte custom_fields ohnehin
     private const MAX_VALUE_LENGTH = 2000;
 
     /** @return array<string, string> */
@@ -67,7 +67,7 @@ final class TmmsPayloadReader
             }
 
             // Sanitisierung auf der Session-Seite identisch zum Request-Pfad — sonst landen
-            // Roh-Strings (Tags, Ueberlaengen) im Cart-Payload und in custom_fields.
+            // Roh-Strings (Tags, Überlängen) im Cart-Payload und in custom_fields.
             $value = $this->sanitizeFrom($data, TmmsConstants::SESSION_VALUE_KEY);
             if ($value === '') {
                 continue;
@@ -90,7 +90,7 @@ final class TmmsPayloadReader
         return $this->sanitize($this->normalizeScalar($source[$key] ?? null));
     }
 
-    // Nicht-Skalare (Arrays/Objekte) werden verworfen, damit nichts ungeprueft weiterlaeuft
+    // Nicht-Skalare (Arrays/Objekte) werden verworfen, damit nichts ungeprüft weiterläuft
     private function normalizeScalar(mixed $raw): string
     {
         if (!is_scalar($raw)) {
@@ -100,7 +100,7 @@ final class TmmsPayloadReader
         return trim((string) $raw);
     }
 
-    // HTML-Tags raus + Laenge kappen, bevor der Wert in Payload/custom_fields landet
+    // HTML-Tags raus + Länge kappen, bevor der Wert in Payload/custom_fields landet
     private function sanitize(string $value): string
     {
         $stripped = strip_tags($value);

@@ -40,7 +40,7 @@ parameters:
                     - unserialize  # Object-Injection — json_decode()
         # use_from_tests aus: Test-Code darf gezielt Test-Klassen nutzen
         use_from_tests: false
-        # ignoreErrors muss moeglich bleiben fuer dokumentierte Ausnahmen
+        # ignoreErrors muss möglich bleiben für dokumentierte Ausnahmen
         non_ignorable: false
 
 includes:

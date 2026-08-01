@@ -39,9 +39,9 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
 
     protected function setUp(): void
     {
-        // Plattform-Bootstrap nur in CI vorhanden — lokal ueberspringen
+        // Plattform-Bootstrap nur in CI vorhanden — lokal überspringen
         if (!class_exists(\Shopware\Core\Kernel::class) || getenv('KERNEL_CLASS') === false) {
-            self::markTestSkipped('Shopware-Kernel nicht verfuegbar — Integration-Test laeuft nur in der Plattform-Test-Umgebung.');
+            self::markTestSkipped('Shopware-Kernel nicht verfügbar — Integration-Test läuft nur in der Plattform-Test-Umgebung.');
         }
     }
 
@@ -65,7 +65,7 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
         $activeFields = $this->fetchCustomFields($itemWithPayloadId);
         self::assertNotNull($activeFields);
         self::assertSame('1190', $activeFields[TmmsConstants::customFieldValueKey(1)] ?? null);
-        self::assertSame('Laenge', $activeFields[TmmsConstants::customFieldLabelKey(1)] ?? null);
+        self::assertSame('Länge', $activeFields[TmmsConstants::customFieldLabelKey(1)] ?? null);
 
         $passiveFields = $this->fetchCustomFields($itemWithoutPayloadId);
         self::assertNull(
@@ -88,7 +88,7 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
             payloadForSecond: [
                 TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
                 TmmsConstants::payloadValueKey(1) => '1195',
-                TmmsConstants::payloadLabelKey(1) => 'Laenge',
+                TmmsConstants::payloadLabelKey(1) => 'Länge',
             ],
         );
 
@@ -143,12 +143,12 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
         $context = Context::createDefaultContext();
         $orderData = $this->getOrderData($orderId, $context)[0];
 
-        // Erstes LineItem: ueberschreiben mit unserer ID + TMMS-Payload
+        // Erstes LineItem: überschreiben mit unserer ID + TMMS-Payload
         $orderData['lineItems'][0]['id'] = $firstLineItemId;
         $orderData['lineItems'][0]['payload'] = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
             TmmsConstants::payloadValueKey(1) => '1190',
-            TmmsConstants::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadLabelKey(1) => 'Länge',
         ];
 
         // Zweites LineItem: gleicher Datensatz, andere ID, optional ohne Payload

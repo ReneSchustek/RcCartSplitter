@@ -8,8 +8,8 @@ use Ruhrcoder\RcCartSplitter\Service\CartInputProviderInterface;
 use Shopware\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-// Capture-Logik bewusst entkoppelt von TMMS: weitere Input-Quellen docken ueber den Tag
-// `rc_cart_splitter.input_provider` an, ohne diesen Subscriber zu aendern.
+// Capture-Logik bewusst entkoppelt von TMMS: weitere Input-Quellen docken über den Tag
+// `rc_cart_splitter.input_provider` an, ohne diesen Subscriber zu ändern.
 final class CartInputCaptureSubscriber implements EventSubscriberInterface
 {
     /** @param iterable<CartInputProviderInterface> $providers */

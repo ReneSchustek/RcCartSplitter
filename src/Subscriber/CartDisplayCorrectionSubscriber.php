@@ -12,7 +12,7 @@ use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-// Laeuft nach TMMS (Prio -50) und ueberschreibt dessen Extensions, weil TMMS die Werte
+// Läuft nach TMMS (Prio -50) und überschreibt dessen Extensions, weil TMMS die Werte
 // aus der Session pro Produktnummer setzt und damit alle Split-Positionen identisch macht.
 final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
 {
@@ -48,9 +48,9 @@ final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // Wenn rcTmmsActive gesetzt ist, ist der Position-Payload autoritativ. Fuer leere Felder
+        // Wenn rcTmmsActive gesetzt ist, ist der Position-Payload autoritativ. Für leere Felder
         // muss die TMMS-Extension entfernt werden, sonst leakt der Session-Wert (gleicher
-        // Produktnummer-Eintrag fuer alle Split-Positionen) in die Anzeige.
+        // Produktnummer-Eintrag für alle Split-Positionen) in die Anzeige.
         for ($i = 1; $i <= TmmsConstants::INPUT_COUNT; $i++) {
             [$value, $label] = $this->resolveField($i, $payload, $sessionInputs);
 
@@ -99,7 +99,7 @@ final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
             return [$value, $label];
         }
 
-        // Defense-in-Depth: Alt-Carts ohne rcTmmsActive haben den Session-Schluessel als einzige Quelle.
+        // Defense-in-Depth: Alt-Carts ohne rcTmmsActive haben den Session-Schlüssel als einzige Quelle.
         $sessionEntry = $sessionInputs[$i] ?? null;
         if (!is_array($sessionEntry)) {
             return ['', ''];

@@ -5,7 +5,7 @@ PluginManager.register('CartSplitter', CartSplitterPlugin, 'form[action*="checko
 
 // Re-Initialisierung nach Variantenwechsel — Shopware baut die Buybox neu auf.
 // Gezielt nur CartSplitter neu binden, sonst werden alle Storefront-Plugins der Seite
-// (Slider, Galerie, Reviews, Wishlist ...) unnoetig re-initialisiert.
+// (Slider, Galerie, Reviews, Wishlist ...) unnötig re-initialisiert.
 document.$emitter.subscribe('onVariantChange', () => {
     window.PluginManager.initializePlugin('CartSplitter');
 });

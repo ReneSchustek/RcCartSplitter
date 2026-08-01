@@ -4,12 +4,12 @@ import Plugin from 'src/plugin-system/plugin.class';
 // dieses Plugin sammelt sie pro Produkt, leitet daraus eine deterministische LineItem-ID ab und
 // injiziert die Werte als Hidden-Felder, damit der Cart sie ohne weiteren Round-Trip anzeigen kann.
 // Suffix-Daten sind generisch: jedes Plugin schreibt seinen Wert in form.dataset.rc*Suffix und meldet
-// die Aenderung ueber das gemeinsame CustomEvent rcSuffixChanged. Neue Suffix-Plugins
+// die Aenderung über das gemeinsame CustomEvent rcSuffixChanged. Neue Suffix-Plugins
 // brauchen keine Code-Aenderung in dieser Datei mehr.
 // Erweiterungs-Howto: README, Abschnitt "Erweiterung: weitere Suffix-Plugins".
 export default class CartSplitterPlugin extends Plugin {
 
-    // Muss mit TmmsConstants::INPUT_COUNT (PHP) uebereinstimmen
+    // Muss mit TmmsConstants::INPUT_COUNT (PHP) übereinstimmen
     static TMMS_MAX_FIELDS = 5;
 
     // Generisches Suffix-Event aus dem Plugin-Interaktionsprotokoll. Bewusst neutraler Namespace —
@@ -36,7 +36,7 @@ export default class CartSplitterPlugin extends Plugin {
             return;
         }
 
-        // Markiert dieses Form: andere Ruhrcoder-Plugins duerfen die LineItem-ID nicht mehr aendern
+        // Markiert dieses Form: andere Ruhrcoder-Plugins duerfen die LineItem-ID nicht mehr ändern
         this._form.dataset.rcIdController = 'true';
 
         this._payloadPrefix = 'lineItems[' + this._productId + '][payload]';
@@ -73,14 +73,14 @@ export default class CartSplitterPlugin extends Plugin {
             input.addEventListener('input', this._boundUpdate);
         });
 
-        // Ein einziger Listener: jedes Suffix-Plugin signalisiert seine Aenderung ueber das generische Event.
+        // Ein einziger Listener: jedes Suffix-Plugin signalisiert seine Aenderung über das generische Event.
         this._form.addEventListener(CartSplitterPlugin.SUFFIX_CHANGED_EVENT, this._boundSuffixChanged);
 
         // capture: true → feuert VOR Shopware-AddToCartPlugin (das auf bubble lauscht)
         this._form.addEventListener('submit', this._boundBeforeSubmit, true);
     }
 
-    // TMMS-Forms sind nicht im Buy-Form geschachtelt — Zugriff nur ueber die feste ID-Konvention
+    // TMMS-Forms sind nicht im Buy-Form geschachtelt — Zugriff nur über die feste ID-Konvention
     _getTmmsInputs() {
         const inputs = [];
 
@@ -118,11 +118,11 @@ export default class CartSplitterPlugin extends Plugin {
         }
     }
 
-    // Capture-Phase vor Shopware-AddToCartPlugin: Werte muessen Teil von FormData(form) sein
+    // Capture-Phase vor Shopware-AddToCartPlugin: Werte müssen Teil von FormData(form) sein
     _injectHiddenFields() {
         // Defensiv die ID neu berechnen — input/change feuern bei Select, Datepicker
-        // und programmatisch gesetzten Werten nicht zuverlaessig, ohne Suffix-Plugin
-        // (z. B. RcDynamicPrice) bliebe die ID dann auf dem Initial-Wert haengen.
+        // und programmatisch gesetzten Werten nicht zuverlässig, ohne Suffix-Plugin
+        // (z. B. RcDynamicPrice) bliebe die ID dann auf dem Initial-Wert hängen.
         this._updateLineItemId();
 
         this._form.querySelectorAll('input[data-rc-tmms]').forEach(el => el.remove());
@@ -169,7 +169,7 @@ export default class CartSplitterPlugin extends Plugin {
         this._form.appendChild(input);
     }
 
-    // Platzhalter ist im TMMS-Backend die kuerzere, kundenfreundliche Variante des Labels
+    // Platzhalter ist im TMMS-Backend die kürzere, kundenfreundliche Variante des Labels
     _getTmmsFieldLabel(tmmsForm, count) {
         const placeholderInput = tmmsForm.querySelector('[name="tmms-customer-input-placeholder-' + count + '"]');
         const labelInput = tmmsForm.querySelector('[name="tmms-customer-input-label-' + count + '"]');
@@ -201,7 +201,7 @@ export default class CartSplitterPlugin extends Plugin {
         return values;
     }
 
-    // Generisches Suffix-Protokoll: andere Plugins schreiben rc*Suffix ans Form, hier ohne Sonderfaelle einbinden
+    // Generisches Suffix-Protokoll: andere Plugins schreiben rc*Suffix ans Form, hier ohne Sonderfälle einbinden
     _collectAllSuffixes() {
         const parts = [];
         const dataset = this._form.dataset;

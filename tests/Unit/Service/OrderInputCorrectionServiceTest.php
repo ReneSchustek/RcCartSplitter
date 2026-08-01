@@ -59,12 +59,12 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $itemA = $this->createLineItem($idA, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
             TmmsConstants::payloadValueKey(1) => '100cm',
-            TmmsConstants::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadLabelKey(1) => 'Länge',
         ]);
         $itemB = $this->createLineItem($idB, payload: [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
             TmmsConstants::payloadValueKey(1) => '200cm',
-            TmmsConstants::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadLabelKey(1) => 'Länge',
         ]);
 
         $fresh = new OrderLineItemCollection([$itemA, $itemB]);
@@ -100,7 +100,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
         self::assertStringContainsString('WHERE id IN', $capturedSql);
         self::assertCount(4, $capturedParams ?? [], 'Pro LineItem ein id- und ein cf-Parameter');
 
-        // In-Memory-Update wurde durchgefuehrt
+        // In-Memory-Update wurde durchgeführt
         self::assertSame('100cm', $itemA->getCustomFields()[TmmsConstants::customFieldValueKey(1)] ?? null);
         self::assertSame('200cm', $itemB->getCustomFields()[TmmsConstants::customFieldValueKey(1)] ?? null);
     }
@@ -158,7 +158,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
         self::assertSame('100cm', $memory->getCustomFields()[TmmsConstants::customFieldValueKey(1)] ?? null);
     }
 
-    // --- correctLineItems: Mapping aus Payload-Schluesseln ---
+    // --- correctLineItems: Mapping aus Payload-Schlüsseln ---
 
     #[Test]
     public function correctLineItemsWritesPayloadFieldsToCustomFields(): void
@@ -166,7 +166,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
             TmmsConstants::payloadValueKey(1) => '100cm',
-            TmmsConstants::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadLabelKey(1) => 'Länge',
             TmmsConstants::payloadValueKey(2) => 'rot',
             TmmsConstants::payloadLabelKey(2) => 'Farbe',
         ];
@@ -175,7 +175,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
 
         self::assertNotNull($customFields);
         self::assertSame('100cm', $customFields[TmmsConstants::customFieldValueKey(1)]);
-        self::assertSame('Laenge', $customFields[TmmsConstants::customFieldLabelKey(1)]);
+        self::assertSame('Länge', $customFields[TmmsConstants::customFieldLabelKey(1)]);
         self::assertSame('rot', $customFields[TmmsConstants::customFieldValueKey(2)]);
         self::assertSame('Farbe', $customFields[TmmsConstants::customFieldLabelKey(2)]);
     }
@@ -186,7 +186,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
             TmmsConstants::payloadValueKey(1) => '100cm',
-            TmmsConstants::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadLabelKey(1) => 'Länge',
         ];
 
         $customFields = $this->captureWrittenCustomFields($payload, ['some_other_field' => 'value']);
@@ -202,13 +202,13 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $payload = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
             TmmsConstants::payloadValueKey(1) => '100cm',
-            TmmsConstants::payloadLabelKey(1) => 'Laenge',
+            TmmsConstants::payloadLabelKey(1) => 'Länge',
         ];
 
         $customFields = $this->captureWrittenCustomFields($payload);
 
         self::assertNotNull($customFields);
-        // Felder 2..INPUT_COUNT sind leer befuellt
+        // Felder 2..INPUT_COUNT sind leer befüllt
         self::assertSame('', $customFields[TmmsConstants::customFieldValueKey(2)]);
         self::assertSame('', $customFields[TmmsConstants::customFieldLabelKey(2)]);
         self::assertSame('', $customFields[TmmsConstants::customFieldValueKey(5)]);
@@ -235,7 +235,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
             TmmsConstants::PAYLOAD_TMMS_INPUTS => [
                 1 => [
                     TmmsConstants::SESSION_VALUE_KEY => '100cm',
-                    TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
+                    TmmsConstants::SESSION_LABEL_KEY => 'Länge',
                     TmmsConstants::SESSION_PLACEHOLDER_KEY => 'z.B. 100cm',
                     TmmsConstants::SESSION_FIELDTYPE_KEY => 'text',
                 ],
@@ -252,7 +252,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
 
         self::assertNotNull($customFields);
         self::assertSame('100cm', $customFields[TmmsConstants::customFieldValueKey(1)]);
-        self::assertSame('Laenge', $customFields[TmmsConstants::customFieldLabelKey(1)]);
+        self::assertSame('Länge', $customFields[TmmsConstants::customFieldLabelKey(1)]);
         self::assertSame('z.B. 100cm', $customFields[TmmsConstants::customFieldPlaceholderKey(1)]);
         self::assertSame('text', $customFields[TmmsConstants::customFieldFieldtypeKey(1)]);
         self::assertSame('rot', $customFields[TmmsConstants::customFieldValueKey(3)]);
@@ -266,7 +266,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
             TmmsConstants::PAYLOAD_TMMS_INPUTS => [
                 1 => [
                     TmmsConstants::SESSION_VALUE_KEY => '100cm',
-                    TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
+                    TmmsConstants::SESSION_LABEL_KEY => 'Länge',
                 ],
             ],
         ];
@@ -307,9 +307,9 @@ final class OrderInputCorrectionServiceTest extends TestCase
     }
 
     /**
-     * Black-Box-Aufruf von correctLineItems mit einem Single-Item-Setup. Faengt das
-     * via DBAL geschriebene customFields-JSON ab und gibt es decodiert zurueck.
-     * Liefert null, wenn kein UPDATE stattfand (Service hat die Korrektur uebersprungen).
+     * Black-Box-Aufruf von correctLineItems mit einem Single-Item-Setup. Fängt das
+     * via DBAL geschriebene customFields-JSON ab und gibt es decodiert zurück.
+     * Liefert null, wenn kein UPDATE stattfand (Service hat die Korrektur übersprungen).
      *
      * @param array<string, mixed> $payload
      * @param array<string, mixed> $existingCustomFields
@@ -343,7 +343,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
 
     /**
      * Black-Box-Erwartung: correctLineItems fasst Connection nicht an, weil keine
-     * Korrektur ausgeloest wurde.
+     * Korrektur ausgelöst wurde.
      *
      * @param array<string, mixed> $payload
      */

@@ -1,4 +1,4 @@
-// Unit-Tests fuer cart-splitter.plugin.js. Zero-Dependency: Node-Standardbibliothek (node:test).
+// Unit-Tests für cart-splitter.plugin.js. Zero-Dependency: Node-Standardbibliothek (node:test).
 // Die Storefront-Quelle wird zur Testzeit eingelesen, `import`/`export` rausgestrippt
 // und mit einer Stub-Plugin-Basisklasse evaluiert — so testen wir den echten Source ohne Webpack-Bundler.
 
@@ -68,27 +68,27 @@ describe('SUFFIX_CHANGED_EVENT — Protokoll-Vertrag', () => {
 });
 
 describe('_fnv32a — FNV-1a-Determinismus', () => {
-    test('liefert fuer denselben Input denselben Hash (Reproduzierbarkeit)', () => {
+    test('liefert für denselben Input denselben Hash (Reproduzierbarkeit)', () => {
         const plugin = makePlugin();
         assert.strictEqual(plugin._fnv32a('rcMeterLengthSuffix=500cm'), plugin._fnv32a('rcMeterLengthSuffix=500cm'));
     });
 
-    test('trennt verschiedene Inputs zuverlaessig (Kollisionsfreiheit auf Stichproben)', () => {
+    test('trennt verschiedene Inputs zuverlässig (Kollisionsfreiheit auf Stichproben)', () => {
         const plugin = makePlugin();
-        assert.notStrictEqual(plugin._fnv32a('Laenge=200'), plugin._fnv32a('Laenge=300'));
+        assert.notStrictEqual(plugin._fnv32a('Länge=200'), plugin._fnv32a('Länge=300'));
     });
 
-    test('liefert fuer den leeren String den FNV-1a-Offset-Basis-Wert 0x811c9dc5', () => {
+    test('liefert für den leeren String den FNV-1a-Offset-Basis-Wert 0x811c9dc5', () => {
         const plugin = makePlugin();
         assert.strictEqual(plugin._fnv32a(''), 0x811c9dc5);
     });
 
-    test('liefert fuer "a" den oeffentlichen FNV-1a-Referenzwert 0xe40c292c', () => {
+    test('liefert für "a" den öffentlichen FNV-1a-Referenzwert 0xe40c292c', () => {
         const plugin = makePlugin();
         assert.strictEqual(plugin._fnv32a('a'), 0xe40c292c);
     });
 
-    test('liefert fuer "foobar" den oeffentlichen FNV-1a-Referenzwert 0xbf9cf968', () => {
+    test('liefert für "foobar" den öffentlichen FNV-1a-Referenzwert 0xbf9cf968', () => {
         const plugin = makePlugin();
         assert.strictEqual(plugin._fnv32a('foobar'), 0xbf9cf968);
     });
@@ -96,14 +96,14 @@ describe('_fnv32a — FNV-1a-Determinismus', () => {
 
 describe('_cleanLabel', () => {
     test('entfernt trailing Doppelpunkt', () => {
-        assert.strictEqual(makePlugin()._cleanLabel('Laenge:'), 'Laenge');
+        assert.strictEqual(makePlugin()._cleanLabel('Länge:'), 'Länge');
     });
 
     test('entfernt gemischte trailing Whitespaces und Doppelpunkte', () => {
         assert.strictEqual(makePlugin()._cleanLabel('Material  :  '), 'Material');
     });
 
-    test('laesst Label ohne trailing Trennzeichen unveraendert', () => {
+    test('lässt Label ohne trailing Trennzeichen unverändert', () => {
         assert.strictEqual(makePlugin()._cleanLabel('Farbe'), 'Farbe');
     });
 });
@@ -113,7 +113,7 @@ describe('_collectAllSuffixes', () => {
         assert.strictEqual(makePlugin(PRODUCT_ID, {})._collectAllSuffixes(), '');
     });
 
-    test('sortiert rc*Suffix-Attribute deterministisch unabhaengig von der Insertion-Order', () => {
+    test('sortiert rc*Suffix-Attribute deterministisch unabhängig von der Insertion-Order', () => {
         const plugin = makePlugin(PRODUCT_ID, {
             rcMeterLengthSuffix: '500cm',
             rcColorPickerSuffix: 'eiche',
@@ -170,8 +170,8 @@ describe('_computeId', () => {
 
 describe('_getTmmsFieldLabel', () => {
     test('verwendet den Placeholder, wenn er vom Roh-Label abweicht', () => {
-        const tmmsForm = makeTmmsForm({ placeholder: 'Laenge', label: 'Laenge - intern' });
-        assert.strictEqual(makePlugin()._getTmmsFieldLabel(tmmsForm, 1), 'Laenge');
+        const tmmsForm = makeTmmsForm({ placeholder: 'Länge', label: 'Länge - intern' });
+        assert.strictEqual(makePlugin()._getTmmsFieldLabel(tmmsForm, 1), 'Länge');
     });
 
     test('schneidet bei fehlendem Placeholder den " - "-Suffix aus dem Roh-Label ab', () => {
@@ -202,7 +202,7 @@ function makeFullTmmsForm({ value = '', placeholder = '', label = '' } = {}) {
     };
 }
 
-// Minimal-DOM-Stubs nur fuer _injectHiddenFields(): kein jsdom, nur das, was die Methode braucht.
+// Minimal-DOM-Stubs nur für _injectHiddenFields(): kein jsdom, nur das, was die Methode braucht.
 function withDom(tmmsForms, fn) {
     const previousDocument = globalThis.document;
     globalThis.document = {
@@ -245,17 +245,17 @@ describe('_injectHiddenFields — Submit-Capture-Pfad', () => {
     // Der Bugfix-Vertrag: ohne vorher gefeuerte change/input-Events (z. B. Select-Wert
     // programmatisch gesetzt, Datepicker-Update, Race mit dem Submit) muss die LineItem-ID
     // beim Submit trotzdem auf dem Hash der aktuellen TMMS-Werte landen — sonst merged
-    // Shopware Positionen, die fachlich getrennt gehoeren.
+    // Shopware Positionen, die fachlich getrennt gehören.
     test('berechnet die LineItem-ID neu, auch wenn vorher kein input/change gefeuert hat', () => {
         const plugin = makePluginWithForm();
-        const tmmsForm = makeFullTmmsForm({ value: 'Wert A', placeholder: 'Laenge', label: 'Laenge' });
+        const tmmsForm = makeFullTmmsForm({ value: 'Wert A', placeholder: 'Länge', label: 'Länge' });
         const initialId = plugin._idInput.value;
 
         withDom({ ['productCustomerInputForm-' + PRODUCT_ID + '-1']: tmmsForm }, () => {
             plugin._injectHiddenFields();
         });
 
-        assert.notStrictEqual(plugin._idInput.value, initialId, 'ID muss sich gegenueber dem Initial-Wert geaendert haben');
+        assert.notStrictEqual(plugin._idInput.value, initialId, 'ID muss sich gegenüber dem Initial-Wert geändert haben');
         assert.match(plugin._idInput.value, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
@@ -263,17 +263,17 @@ describe('_injectHiddenFields — Submit-Capture-Pfad', () => {
         const pluginA = makePluginWithForm();
         const pluginB = makePluginWithForm();
 
-        withDom({ ['productCustomerInputForm-' + PRODUCT_ID + '-1']: makeFullTmmsForm({ value: 'Wert A', label: 'Laenge' }) }, () => {
+        withDom({ ['productCustomerInputForm-' + PRODUCT_ID + '-1']: makeFullTmmsForm({ value: 'Wert A', label: 'Länge' }) }, () => {
             pluginA._injectHiddenFields();
         });
-        withDom({ ['productCustomerInputForm-' + PRODUCT_ID + '-1']: makeFullTmmsForm({ value: 'Wert B', label: 'Laenge' }) }, () => {
+        withDom({ ['productCustomerInputForm-' + PRODUCT_ID + '-1']: makeFullTmmsForm({ value: 'Wert B', label: 'Länge' }) }, () => {
             pluginB._injectHiddenFields();
         });
 
         assert.notStrictEqual(pluginA._idInput.value, pluginB._idInput.value);
     });
 
-    test('faellt ohne TMMS-Werte und ohne Suffix auf die Produkt-ID zurueck (kein unnoetiger Split)', () => {
+    test('fällt ohne TMMS-Werte und ohne Suffix auf die Produkt-ID zurück (kein unnötiger Split)', () => {
         const plugin = makePluginWithForm();
 
         withDom({}, () => {

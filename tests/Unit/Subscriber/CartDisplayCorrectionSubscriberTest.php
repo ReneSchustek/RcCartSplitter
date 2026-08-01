@@ -47,7 +47,7 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
 
         $this->dispatch($lineItem);
 
-        // Promotion-Items duerfen nicht beruehrt werden — TMMS-Logik ist produktspezifisch.
+        // Promotion-Items duerfen nicht berührt werden — TMMS-Logik ist produktspezifisch.
         self::assertFalse($lineItem->hasExtension(TmmsConstants::extensionName(1)));
     }
 
@@ -77,7 +77,7 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_ACTIVE, '1');
         $lineItem->setPayloadValue(TmmsConstants::payloadValueKey(1), '100cm');
-        $lineItem->setPayloadValue(TmmsConstants::payloadLabelKey(1), 'Laenge');
+        $lineItem->setPayloadValue(TmmsConstants::payloadLabelKey(1), 'Länge');
         $lineItem->setPayloadValue(TmmsConstants::payloadValueKey(2), 'rechts');
         $lineItem->setPayloadValue(TmmsConstants::payloadLabelKey(2), 'Gehrungsschnitt');
 
@@ -86,7 +86,7 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
         $ext1 = $lineItem->getExtension(TmmsConstants::extensionName(1));
         self::assertInstanceOf(ArrayEntity::class, $ext1);
         self::assertSame('100cm', $ext1->get('value'));
-        self::assertSame('Laenge', $ext1->get('label'));
+        self::assertSame('Länge', $ext1->get('label'));
 
         $ext2 = $lineItem->getExtension(TmmsConstants::extensionName(2));
         self::assertInstanceOf(ArrayEntity::class, $ext2);
@@ -100,9 +100,9 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_ACTIVE, '1');
         $lineItem->setPayloadValue(TmmsConstants::payloadValueKey(1), '100cm');
-        // Feld 2 nicht im Payload — Position hat dieses Feld nicht ausgefuellt.
+        // Feld 2 nicht im Payload — Position hat dieses Feld nicht ausgefüllt.
 
-        // TMMS hat zuvor aus der Session pro Produktnummer dieselbe Extension fuer alle
+        // TMMS hat zuvor aus der Session pro Produktnummer dieselbe Extension für alle
         // Split-Positionen geschrieben. Genau dieser Leak muss verschwinden, sonst zeigen
         // beide Positionen dasselbe Feld 2.
         $lineItem->addExtension(
@@ -125,7 +125,7 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
         $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_INPUTS, [
             1 => [
                 TmmsConstants::SESSION_VALUE_KEY => '50cm',
-                TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
+                TmmsConstants::SESSION_LABEL_KEY => 'Länge',
             ],
             2 => [
                 TmmsConstants::SESSION_VALUE_KEY => 'links',
@@ -138,7 +138,7 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
         $ext1 = $lineItem->getExtension(TmmsConstants::extensionName(1));
         self::assertInstanceOf(ArrayEntity::class, $ext1);
         self::assertSame('50cm', $ext1->get('value'));
-        self::assertSame('Laenge', $ext1->get('label'));
+        self::assertSame('Länge', $ext1->get('label'));
 
         $ext2 = $lineItem->getExtension(TmmsConstants::extensionName(2));
         self::assertInstanceOf(ArrayEntity::class, $ext2);
@@ -150,12 +150,12 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
     public function onCartPageLoadedDoesNotRemoveExtensionsInLegacySessionFallback(): void
     {
         // Ohne rcTmmsActive duerfen wir keine Extensions entfernen — wir wissen nicht,
-        // ob der Payload autoritativ ist. Defensive Variante: nur ergaenzen.
+        // ob der Payload autoritativ ist. Defensive Variante: nur ergänzen.
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_INPUTS, [
             1 => [
                 TmmsConstants::SESSION_VALUE_KEY => '50cm',
-                TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
+                TmmsConstants::SESSION_LABEL_KEY => 'Länge',
             ],
         ]);
         $lineItem->addExtension(

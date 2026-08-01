@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-// Standalone-Twig-Lint — ohne Shopware-Boot. Faengt Syntax-Fehler (Klammern,
-// Quotes, unclosed-Tags) ueber den Twig-Lexer. Tag-/Filter-Existenz (sw_extends,
-// sw_sanitize) wird hier NICHT geprueft — das macht `bin/console lint:twig` auf
+// Standalone-Twig-Lint — ohne Shopware-Boot. Fängt Syntax-Fehler (Klammern,
+// Quotes, unclosed-Tags) über den Twig-Lexer. Tag-/Filter-Existenz (sw_extends,
+// sw_sanitize) wird hier NICHT geprüft — das macht `bin/console lint:twig` auf
 // einer gebooteten Plattform-Instanz.
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -44,7 +44,7 @@ foreach ($iterator as $file) {
 }
 
 if ($errors > 0) {
-    fwrite(STDERR, sprintf("Twig-Lint: %d Datei(en) mit Syntaxfehlern (von %d geprueft).\n", $errors, $count));
+    fwrite(STDERR, sprintf("Twig-Lint: %d Datei(en) mit Syntaxfehlern (von %d geprüft).\n", $errors, $count));
     exit(1);
 }
 

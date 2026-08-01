@@ -14,7 +14,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-// Laeuft nach TMMS, weil TMMS sonst alle Split-Positionen mit den gleichen Session-Daten ueberschreibt;
+// Läuft nach TMMS, weil TMMS sonst alle Split-Positionen mit den gleichen Session-Daten überschreibt;
 // die eigentliche Korrektur liegt im OrderInputCorrectionService.
 final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
 {
@@ -27,7 +27,7 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
 
     public static function getSubscribedEvents(): array
     {
-        // Beide Events: TMMS schreibt sowohl bei OrderPlaced als auch bei FinishPageLoaded zurueck
+        // Beide Events: TMMS schreibt sowohl bei OrderPlaced als auch bei FinishPageLoaded zurück
         return [
             CheckoutOrderPlacedEvent::class => ['onOrderPlaced', -500],
             CheckoutFinishPageLoadedEvent::class => ['onCheckoutFinish', -500],

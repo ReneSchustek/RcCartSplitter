@@ -40,7 +40,7 @@ final class TmmsCartInputProviderTest extends TestCase
         $this->requestStack = new RequestStack();
         $this->connection = $this->createMock(Connection::class);
         $this->payloadReader = new TmmsPayloadReader();
-        // NullLogger fuer Default — Tests, die das Warning verifizieren wollen, ueberschreiben das.
+        // NullLogger für Default — Tests, die das Warning verifizieren wollen, überschreiben das.
         $this->logger = new NullLogger();
 
         $this->provider = new TmmsCartInputProvider(
@@ -80,7 +80,7 @@ final class TmmsCartInputProviderTest extends TestCase
                     'payload' => [
                         TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
                         TmmsConstants::payloadValueKey(1) => '100cm',
-                        TmmsConstants::payloadLabelKey(1) => 'Laenge',
+                        TmmsConstants::payloadLabelKey(1) => 'Länge',
                     ],
                 ],
             ],
@@ -97,7 +97,7 @@ final class TmmsCartInputProviderTest extends TestCase
 
         self::assertSame('1', $result[TmmsConstants::PAYLOAD_TMMS_ACTIVE]);
         self::assertSame('100cm', $result[TmmsConstants::payloadValueKey(1)]);
-        self::assertSame('Laenge', $result[TmmsConstants::payloadLabelKey(1)]);
+        self::assertSame('Länge', $result[TmmsConstants::payloadLabelKey(1)]);
     }
 
     #[Test]
@@ -108,7 +108,7 @@ final class TmmsCartInputProviderTest extends TestCase
         $session = new Session(new MockArraySessionStorage());
         $session->set(TmmsConstants::sessionKey(1, 'SW10001'), [
             TmmsConstants::SESSION_VALUE_KEY => '50cm',
-            TmmsConstants::SESSION_LABEL_KEY => 'Laenge',
+            TmmsConstants::SESSION_LABEL_KEY => 'Länge',
         ]);
         $request->setSession($session);
         $this->requestStack->push($request);
@@ -132,9 +132,9 @@ final class TmmsCartInputProviderTest extends TestCase
         // Split-Positionen zeigen den gleichen Session-Wert.
         self::assertSame('1', $result[TmmsConstants::PAYLOAD_TMMS_ACTIVE]);
         self::assertSame('50cm', $result[TmmsConstants::payloadValueKey(1)]);
-        self::assertSame('Laenge', $result[TmmsConstants::payloadLabelKey(1)]);
+        self::assertSame('Länge', $result[TmmsConstants::payloadLabelKey(1)]);
 
-        // Sammel-Key bleibt zusaetzlich erhalten — Order-Korrektur deckt damit Altbestellungen ab.
+        // Sammel-Key bleibt zusätzlich erhalten — Order-Korrektur deckt damit Altbestellungen ab.
         self::assertArrayHasKey(TmmsConstants::PAYLOAD_TMMS_INPUTS, $result);
         $inputs = $result[TmmsConstants::PAYLOAD_TMMS_INPUTS];
         self::assertSame('50cm', $inputs[1][TmmsConstants::SESSION_VALUE_KEY]);

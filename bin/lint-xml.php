@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-// Well-formed-Check fuer alle Plugin-XML-Dateien. Validiert nicht gegen XSDs
-// (Schema-Lookup ueber URLs ist im CI nicht garantiert verfuegbar) — der volle
-// Schema-Check laeuft via `bin/console lint:xml` auf einer gebooteten Plattform.
+// Well-formed-Check für alle Plugin-XML-Dateien. Validiert nicht gegen XSDs
+// (Schema-Lookup über URLs ist im CI nicht garantiert verfügbar) — der volle
+// Schema-Check läuft via `bin/console lint:xml` auf einer gebooteten Plattform.
 
 $root = __DIR__ . '/../src';
 if (!is_dir($root)) {
@@ -42,7 +42,7 @@ foreach ($iterator as $file) {
 }
 
 if ($errors > 0) {
-    fwrite(STDERR, sprintf("XML-Lint: %d Datei(en) mit Fehlern (von %d geprueft).\n", $errors, $count));
+    fwrite(STDERR, sprintf("XML-Lint: %d Datei(en) mit Fehlern (von %d geprüft).\n", $errors, $count));
     exit(1);
 }
 
