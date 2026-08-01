@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+
+    <card>
+        <title lang="de-DE">TMMS-Hinweistext</title>
+        <title lang="en-GB">TMMS hint text</title>
+
+        <input-field type="textarea">
+            <name>tmmsInformationMessage</name>
+            <label lang="de-DE">Globaler Hinweistext unter den TMMS-Eingabefeldern</label>
+            <label lang="en-GB">Global hint text below the TMMS input fields</label>
+            <helpText lang="de-DE">Wird auf der Produktdetailseite im blauen Info-Container unter den TMMS-Eingabefeldern angezeigt. Reihenfolge: Produkt-Override &gt; Kategorie-Override &gt; dieser Plugin-Default &gt; Snippet-Default. Zeilenumbrüche werden im Storefront übernommen. Leer = Snippet-Default greift.</helpText>
+            <helpText lang="en-GB">Shown on the product detail page in the blue info container below the TMMS input fields. Order: product override &gt; category override &gt; this plugin default &gt; snippet default. Line breaks are preserved in the storefront. Empty = snippet default applies.</helpText>
+        </input-field>
+    </card>
+</config>

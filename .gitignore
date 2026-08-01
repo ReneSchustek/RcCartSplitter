@@ -1,0 +1,33 @@
+# ============================================================
+# .gitignore – RcCartSplitter
+# ============================================================
+
+# Secrets / Umgebungsvariablen
+.env
+.env.local
+.env.*.local
+!.env.example
+secrets.json
+*.pfx
+*.p12
+*.key
+config/secrets/
+
+# Logs
+*.log
+/logs/
+
+# PHP / Shopware
+vendor/
+var/
+public/bundles/
+node_modules/
+
+# Test- und Coverage-Caches (nie committen)
+.phpunit.result.cache
+.phpunit.cache/
+coverage.xml
+coverage/
+
+# composer.lock — Library-Plugins liefern keinen Lock mit
+composer.lock
