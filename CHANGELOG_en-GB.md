@@ -1,3 +1,7 @@
+# 2.1.4
+
+- **Preparing for the next Shopware major release.** Search results are now accessed the way Shopware 6.8 requires. Behaviour is unchanged.
+
 # 2.1.2
 
 - Fixed: The built storefront JavaScript was not in the repository. It was served on the server but never shipped — a full re-upload would have lost it and line item splitting would have stopped working silently.
@@ -74,4 +78,3 @@
 - Added: TMMS inputs are persisted per position in the `LineItem` payload
 - Added: Correction of the TMMS "verify input" display in Mini-Cart, Cart and Confirm
 - Added: Generic suffix protocol for `LineItem` IDs — other plugins (e.g. RcDynamicPrice) integrate without code changes
-

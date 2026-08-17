@@ -55,7 +55,7 @@ final class CategoryChainLoader implements CategoryChainLoaderInterface
         $criteria = new Criteria([$id]);
         $criteria->setLimit(1);
 
-        $entity = $this->categoryRepository->search($criteria, $context)->first();
+        $entity = $this->categoryRepository->search($criteria, $context)->getEntities()->first();
 
         return $entity instanceof CategoryEntity ? $entity : null;
     }

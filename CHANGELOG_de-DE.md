@@ -1,3 +1,13 @@
+# 2.1.4
+
+- **Vorbereitung auf die nächste Shopware-Hauptversion.** Der Zugriff auf Suchergebnisse folgt der Schreibweise, die Shopware 6.8 verlangt. Am Verhalten ändert sich nichts.
+
+# 2.1.3
+
+- **Behoben (kritisch): Gutscheincodes waren nicht mehr einlösbar.** Jede Eingabe eines Aktionscodes im Warenkorb endete mit „Leider ist etwas schiefgelaufen“ — ohne Grund für den Kunden und ohne Eintrag im Protokoll. Ursache: Das Plugin behandelte **jede** Warenkorb-Position als Produkt. Ein Gutschein trägt an der Stelle, an der sonst die Produktkennung steht, aber den **Code** — der Versuch, ihn als Kennung zu lesen, riss den gesamten Vorgang mit. Betroffen waren alle Codes; automatische Rabatte ohne Code liefen unverändert.
+- Geändert: Nur noch Produktpositionen erreichen die Auswertung der Kundeneingaben. Die Prüfung sitzt an einer Stelle für alle angedockten Erweiterungen, nicht in jeder einzelnen — eine Annahme, die jede für sich treffen müsste, trifft irgendwann eine nicht.
+- Geändert: Die Absicherung gegen Datenbankfehler deckt jetzt ab, was ihr Vorsatz immer war. Sie fing bislang nur eine Fehlerart ab und ließ ausgerechnet die durch, die diesen Ausfall verursacht hat.
+
 # 2.1.2
 
 - Behoben: Das gebaute Storefront-JavaScript lag nicht im Repo. Auf dem Server wurde es ausgeliefert, mitgeliefert wurde es nie — ein vollständiger Neu-Upload aus dem Repo hätte es verloren, und die Trennung der Positionen hätte still aufgehört zu funktionieren. Ohne Node auf dem Server fällt so etwas erst auf, wenn ein Kunde zwei verschiedene Eingaben zum selben Artikel macht und nur eine Position sieht.
@@ -74,4 +84,3 @@
 - Hinzugefügt: TMMS-Eingaben werden pro Position im LineItem-Payload gesichert
 - Hinzugefügt: Korrektur der TMMS-„Eingabe prüfen"-Anzeige im Warenkorb (Mini-Cart, Cart, Confirm)
 - Hinzugefügt: Generisches Suffix-Protokoll für LineItem-IDs — andere Plugins (z. B. RcDynamicPrice) wirken ohne Code-Änderung mit
-

@@ -192,4 +192,86 @@ final class TmmsCartInputProviderTest extends TestCase
             $this->createMock(SalesChannelContext::class),
         );
     }
+
+    /**
+     * Der Test zum Gutschein-Ausfall.
+     *
+     * Ein Gutschein-Platzhalter trägt in `referencedId` den **Code**, keine UUID
+     * (Core `PromotionItemBuilder::buildPlaceholderItem()`). Der Provider hielt jedes
+     * Line-Item für ein Produkt, reichte "Sommer2026" an `Uuid::fromHexToBytes()` weiter
+     * und ließ die `InvalidUuidException` bis in den Storefront-Controller steigen. Der
+     * fing sie generisch ab — Kunde sah "Leider ist etwas schiefgelaufen", das Log blieb
+     * stumm. Auf Live war damit **kein einziger Gutscheincode einlösbar**.
+     */
+    #[Test]
+    public function provideIgnoresPromotionPlaceholderWithNonUuidReferencedId(): void
+    {
+        $lineItem = new LineItem('promotion-1', LineItem::PROMOTION_LINE_ITEM_TYPE);
+        $lineItem->setReferencedId('Sommer2026');
+
+        $this->requestStack->push(new Request());
+        $this->connection->expects(self::never())->method('fetchOne');
+
+        self::assertSame([], $this->provider->provide($this->createEvent('promotion-1', $lineItem)));
+    }
+
+    /**
+     * Auch ein Produkt-Line-Item kann eine `referencedId` tragen, die keine UUID ist —
+     * etwa aus einem fremden Plugin, das eine eigene Kennung setzt. Der Provider darf
+     * darauf nicht mit einer Ausnahme reagieren, denn er hängt im Add-to-Cart-Pfad.
+     */
+    #[Test]
+    public function provideDoesNotThrowWhenReferencedIdIsNoUuid(): void
+    {
+        $lineItem = $this->createLineItem('kein-uuid-wert');
+
+        $request = new Request();
+        $request->setSession(new Session(new MockArraySessionStorage()));
+        $this->requestStack->push($request);
+
+        $this->connection->expects(self::never())->method('fetchOne');
+
+        self::assertSame([], $this->provider->provide($this->createEvent('kein-uuid-wert', $lineItem)));
+    }
+
+    /**
+     * Der `catch` soll halten, was sein Kommentar verspricht: "Ein Fehler darf AddToCart
+     * nicht killen." Bis zur Fassung 2.1.3 fing er nur `DbalException` — jede andere Ausnahme stieg
+     * durch. Hier steht stellvertretend eine `RuntimeException`.
+     */
+    #[Test]
+    public function provideSurvivesAnyDatabaseFailureNotJustDbalExceptions(): void
+    {
+        $productId = Uuid::randomHex();
+        $lineItem = $this->createLineItem($productId);
+
+        $request = new Request();
+        $request->setSession(new Session(new MockArraySessionStorage()));
+        $this->requestStack->push($request);
+
+        $this->connection->method('fetchOne')->willThrowException(new \RuntimeException('Verbindung weg'));
+
+        self::assertSame([], $this->provider->provide($this->createEvent($productId, $lineItem)));
+    }
+
+    /**
+     * Gegenprobe: Der Produktpfad bleibt unangetastet. Ohne diesen Test könnte die
+     * Korrektur den eigentlichen Zweck des Plugins mit abschalten.
+     */
+    #[Test]
+    public function provideStillReadsTheProductPathAfterTheGuard(): void
+    {
+        $productId = Uuid::randomHex();
+        $lineItem = $this->createLineItem($productId);
+
+        $request = new Request();
+        $request->request->set('lineItems', [
+            $productId => ['payload' => [TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1']],
+        ]);
+        $this->requestStack->push($request);
+
+        $ergebnis = $this->provider->provide($this->createEvent($productId, $lineItem));
+
+        self::assertNotSame([], $ergebnis, 'Der Produktpfad muss weiterhin Werte liefern.');
+    }
 }

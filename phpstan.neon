@@ -7,7 +7,12 @@ parameters:
         - vendor
     bootstrapFiles:
         - vendor/autoload.php
-    ignoreErrors: []
+    ignoreErrors:
+        # In Tests gibt es keinen Aufrufer, aus dem sich ein Kontext ableiten ließe. Ein aufgebauter
+        # Nutzerkontext täuschte eine Abhängigkeit vor, die der Test gar nicht hat.
+        -
+            message: '#Do not use Shopware\\Core\\Framework\\Context::createDefaultContext#'
+            path: tests/*
 
     banned_code:
         nodes:
@@ -44,6 +49,7 @@ parameters:
         non_ignorable: false
 
 includes:
+    - vendor/shopwarelabs/phpstan-shopware/rules.neon
     - vendor/ekino/phpstan-banned-code/extension.neon
     - vendor/phpstan/phpstan-strict-rules/rules.neon
     - vendor/phpstan/phpstan-deprecation-rules/rules.neon

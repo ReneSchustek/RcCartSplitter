@@ -85,17 +85,34 @@ final class TmmsCartInputProvider implements CartInputProviderInterface
 
     private function fetchProductNumber(string $productId): ?string
     {
+        // Nicht darauf verlassen, dass der Aufrufer eine UUID liefert.
+        //
+        // `Uuid::fromHexToBytes()` wirft bei allem, was keine ist. Ein Gutschein-Platzhalter
+        // trägt in `referencedId` den **Code** statt einer Kennung — die Ausnahme stieg bis in
+        // den Storefront-Controller, der sie generisch abfing. Ergebnis auf Live: Kein
+        // Gutscheincode war mehr einlösbar, der Kunde sah "Leider ist etwas schiefgelaufen",
+        // und im Protokoll stand nichts.
+        //
+        // Kein Protokolleintrag hier: Der Fall ist erwartbar, sobald ein anderes Plugin eine
+        // eigene Kennung setzt. Eine Warnung je Warenkorb-Zugang wäre Rauschen.
+        if (!Uuid::isValid($productId)) {
+            return null;
+        }
+
         try {
             $productNumber = $this->connection->fetchOne(
                 'SELECT product_number FROM product WHERE id = :id LIMIT 1',
                 ['id' => Uuid::fromHexToBytes($productId)],
             );
-        } catch (DbalException $e) {
-            // DB-Hiccup darf AddToCart nicht killen, aber wir wollen den Fall sehen
+        } catch (\Throwable $error) {
+            // Bewusst `\Throwable` und nicht nur `DbalException`: Der Vorsatz war immer "ein
+            // Fehler darf den Warenkorb-Zugang nicht killen". Die engere Fassung hielt das
+            // nicht — sie ließ genau die Ausnahme durch, die den Gutschein-Fehler auslöste.
             $this->logger->warning('TMMS-Cart-Provider konnte product_number nicht laden', [
                 'productId' => $productId,
-                'exception' => $e,
+                'exception' => $error,
             ]);
+
             return null;
         }
 
