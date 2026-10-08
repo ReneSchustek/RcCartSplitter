@@ -15,14 +15,15 @@ use Shopware\Core\Framework\Plugin;
  * Positionen. Dieses Plugin schreibt die Eingaben in den Positions-Payload, trennt Positionen
  * mit abweichenden Werten und korrigiert Anzeige und Bestelldaten.
  *
- * **Übergangslösung mit Ablaufdatum:** Sobald RcCustomFields die Kundeneingaben selbst übernimmt,
- * wird dieses Plugin überflüssig. Der Weg dorthin steht in der README unter „End-of-Life".
+ * Das Plugin ist eine Übergangslösung: Sobald RcCustomFields die Kundeneingaben selbst übernimmt,
+ * wird es überflüssig. Der Weg dorthin steht in der README unter „End-of-Life".
  */
 final class RcCartSplitter extends Plugin
 {
     /**
-     * Höhere Priority = spätere Ladereihenfolge = OUTER-Layer in der Twig-Inheritance,
-     * gewinnt dadurch bei Block-Overrides (validated gegen TMMS' Default in EB640100-2-Test).
+     * Je höher der Wert, desto weiter außen steht das Plugin in der Twig-Vererbungskette, und
+     * seine Block-Überschreibungen gewinnen. TMMS bleibt auf dem Standardwert 0; mit 1000 setzt
+     * sich der eigene Hinweistext auch gegen Plugins durch, die ihre Priorität maßvoll anheben.
      */
     public function getTemplatePriority(): int
     {

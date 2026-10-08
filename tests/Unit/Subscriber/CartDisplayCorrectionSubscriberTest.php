@@ -18,6 +18,13 @@ use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPage;
 use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPageLoadedEvent;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Prüft die Anzeigekorrektur im Warenkorb: Werte der Position ersetzen die TMMS-Extensions, ein
+ * leeres Feld entfernt die von TMMS gesetzte Extension, und ohne Daten dieses Plugins bleibt alles,
+ * wie TMMS es hinterlassen hat.
+ *
+ * Ein Fehler hier zeigte getrennten Positionen eines Artikels wieder dieselben Eingaben.
+ */
 #[CoversClass(CartDisplayCorrectionSubscriber::class)]
 final class CartDisplayCorrectionSubscriberTest extends TestCase
 {
@@ -47,7 +54,7 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
 
         $this->dispatch($lineItem);
 
-        // Promotion-Items dürfen nicht berührt werden — TMMS-Logik ist produktspezifisch.
+        // Gutscheinpositionen bleiben unberührt, TMMS-Eingaben gibt es nur an Produkten.
         self::assertFalse($lineItem->hasExtension(TmmsConstants::extensionName(1)));
     }
 
@@ -57,8 +64,8 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue('someOtherKey', 'value');
 
-        // Eine vorhandene TMMS-Extension darf in diesem Fall stehen bleiben — wir korrigieren nur,
-        // wenn unser Plugin Daten beigesteuert hat.
+        // Eine vorhandene TMMS-Extension bleibt stehen: Korrigiert wird nur, wo dieses Plugin
+        // Daten beigesteuert hat.
         $lineItem->addExtension(
             TmmsConstants::extensionName(1),
             new ArrayEntity(['value' => 'fremd']),
@@ -102,9 +109,8 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
         $lineItem->setPayloadValue(TmmsConstants::payloadValueKey(1), '100cm');
         // Feld 2 nicht im Payload — Position hat dieses Feld nicht ausgefüllt.
 
-        // TMMS hat zuvor aus der Session pro Produktnummer dieselbe Extension für alle
-        // Split-Positionen geschrieben. Genau dieser Leak muss verschwinden, sonst zeigen
-        // beide Positionen dasselbe Feld 2.
+        // TMMS hat aus der Session je Produktnummer dieselbe Extension an alle getrennten Positionen
+        // gehängt. Sie muss verschwinden, sonst zeigen beide Positionen dasselbe Feld 2.
         $lineItem->addExtension(
             TmmsConstants::extensionName(2),
             new ArrayEntity(['value' => 'Session-Leak']),
@@ -119,8 +125,8 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
     #[Test]
     public function onCartPageLoadedHandlesLegacySessionFallbackWithoutTmmsActive(): void
     {
-        // Alt-Carts (vor dem Provider-Fix) haben nur den Sammel-Key — Defense-in-Depth:
-        // auch dieser Pfad muss die Anzeige pro Position korrigieren.
+        // Positionen ohne rcTmmsActive tragen nur den Sammelschlüssel; auch dann wird die Anzeige
+        // je Position korrigiert.
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_INPUTS, [
             1 => [
@@ -149,8 +155,8 @@ final class CartDisplayCorrectionSubscriberTest extends TestCase
     #[Test]
     public function onCartPageLoadedDoesNotRemoveExtensionsInLegacySessionFallback(): void
     {
-        // Ohne rcTmmsActive dürfen wir keine Extensions entfernen — wir wissen nicht,
-        // ob der Payload autoritativ ist. Defensive Variante: nur ergänzen.
+        // Ohne rcTmmsActive ist unklar, ob der Payload vollständig ist; deshalb wird nur ergänzt,
+        // nichts entfernt.
         $lineItem = new LineItem('product-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setPayloadValue(TmmsConstants::PAYLOAD_TMMS_INPUTS, [
             1 => [

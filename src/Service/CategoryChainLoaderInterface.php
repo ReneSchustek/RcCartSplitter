@@ -6,12 +6,13 @@ namespace Ruhrcoder\RcCartSplitter\Service;
 
 use Shopware\Core\Framework\Context;
 
+/** Abstraktion des Kettenladers, damit der Resolver ohne Repository testbar bleibt. */
 interface CategoryChainLoaderInterface
 {
     /**
-     * Lädt die Kategorie-Kette einer Primärkategorie von der Kategorie selbst
-     * bis zur Wurzel (deepest first). Pro Eintrag wird `id` und `customFields`
-     * geliefert — Reihenfolge bestimmt die Gewinner-Logik im Resolver.
+     * Liefert die Kategorie selbst und danach ihre Vorfahren bis zur Wurzel, den nächsten zuerst.
+     * Der Resolver nimmt den ersten Eintrag mit gesetztem Text, die Reihenfolge entscheidet also,
+     * welche Kategorie gewinnt. Ist die Kategorie nicht lesbar, ist die Liste leer.
      *
      * @return list<array{id: string, customFields: array<string, mixed>}>
      */

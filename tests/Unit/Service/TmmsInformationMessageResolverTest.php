@@ -17,6 +17,11 @@ use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
+/**
+ * Prüft die Reihenfolge Produkt → Kategoriekette → Plugin-Konfiguration → null und dass leere
+ * Texte auf jeder Stufe als nicht gesetzt gelten. Ein Fehler hier zeigte dem Kunden den Hinweis
+ * der falschen Ebene oder gar keinen.
+ */
 #[CoversClass(TmmsInformationMessageResolver::class)]
 final class TmmsInformationMessageResolverTest extends TestCase
 {
@@ -121,7 +126,7 @@ final class TmmsInformationMessageResolverTest extends TestCase
     #[Test]
     public function emptyStringIsTreatedAsNotSetAtAllLevels(): void
     {
-        // Leerer String an jeder Stelle darf einen tieferen Scope nicht überstimmen.
+        // Ein leerer Text auf einer Stufe darf die nächste Stufe nicht überstimmen.
         $product = $this->productWithCustomFields([
             TmmsConstants::PRODUCT_TMMS_INFO_MESSAGE_FIELD => '   ',
             'categoryIds' => [self::PRIMARY_CATEGORY_ID],

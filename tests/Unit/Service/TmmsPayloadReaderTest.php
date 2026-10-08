@@ -12,6 +12,11 @@ use Ruhrcoder\RcCartSplitter\TmmsConstants;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
+/**
+ * Prüft, dass der Leser Kundeneingaben aus Request und Session gleich behandelt: Tags entfernt,
+ * Länge gekappt, Nicht-Skalare und leere Werte verworfen, kaputte Strukturen ohne Ausnahme
+ * übergangen. Ohne diese Prüfung landeten ungefilterte Eingaben im Warenkorb und in der Bestellung.
+ */
 #[CoversClass(TmmsPayloadReader::class)]
 final class TmmsPayloadReaderTest extends TestCase
 {
@@ -22,8 +27,6 @@ final class TmmsPayloadReaderTest extends TestCase
         $this->reader = new TmmsPayloadReader();
     }
 
-    // --- readRequestPayload ---
-
     #[Test]
     public function readRequestPayloadReturnsEmptyWhenNoLineItems(): void
     {
@@ -32,6 +35,44 @@ final class TmmsPayloadReaderTest extends TestCase
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
         self::assertSame([], $result);
+    }
+
+    /**
+     * Die Store-API nimmt dieselben Positionen unter `items` entgegen. Ohne diesen Weg fiele die
+     * Kundeneingabe über die Schnittstelle still aus: Nichts bricht ab, es kommt nur nichts an.
+     * Der Test schlüsselt `items` nach Produktkennung; eine Liste mit fortlaufenden Indizes deckt er
+     * nicht ab.
+     */
+    #[Test]
+    public function readRequestPayloadReadsTheStoreApiParameterName(): void
+    {
+        $request = new Request(request: [
+            'items' => [
+                'product-123' => [
+                    'payload' => [
+                        TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
+                        TmmsConstants::payloadValueKey(1) => 'Wert aus der Schnittstelle',
+                    ],
+                ],
+            ],
+        ]);
+
+        $result = $this->reader->readRequestPayload($request, 'product-123');
+
+        self::assertNotSame([], $result, 'Über die Store-API muss die Eingabe ankommen.');
+        self::assertContains('Wert aus der Schnittstelle', $result);
+    }
+
+    /**
+     * Ein skalarer Wert unter dem Parameternamen darf keine 400 erzeugen — `all()` mit Schlüssel
+     * würfe dort eine BadRequestException.
+     */
+    #[Test]
+    public function readRequestPayloadSurvivesAScalarParameter(): void
+    {
+        $request = new Request(request: ['lineItems' => 'kaputt', 'items' => 'auch kaputt']);
+
+        self::assertSame([], $this->reader->readRequestPayload($request, 'product-123'));
     }
 
     #[Test]
@@ -215,11 +256,9 @@ final class TmmsPayloadReaderTest extends TestCase
         $result = $this->reader->readRequestPayload($request, 'product-123');
 
         self::assertArrayHasKey(TmmsConstants::payloadValueKey(1), $result);
-        // Sanitization-Layer kappt bei MAX_VALUE_LENGTH (2000)
+        // Gekappt wird bei MAX_VALUE_LENGTH (2000).
         self::assertSame(2000, mb_strlen($result[TmmsConstants::payloadValueKey(1)]));
     }
-
-    // --- readSessionData ---
 
     #[Test]
     public function readSessionDataReturnsEmptyWhenNoSessionKeys(): void
@@ -253,7 +292,7 @@ final class TmmsPayloadReaderTest extends TestCase
         self::assertCount(2, $result);
         self::assertSame('100cm', $result[1][TmmsConstants::SESSION_VALUE_KEY]);
         self::assertSame('rot', $result[2][TmmsConstants::SESSION_VALUE_KEY]);
-        // Sanitisierter Read-Pfad füllt fehlende Keys mit '' — nicht mit null
+        // Fehlende Schlüssel werden zum leeren Text, nicht zu null.
         self::assertSame('', $result[2][TmmsConstants::SESSION_PLACEHOLDER_KEY]);
         self::assertSame('', $result[2][TmmsConstants::SESSION_FIELDTYPE_KEY]);
     }
@@ -282,8 +321,8 @@ final class TmmsPayloadReaderTest extends TestCase
     #[Test]
     public function readSessionDataStripsHtmlTags(): void
     {
-        // TMMS-Session enthält User-Input und ist nicht zwingend sanitisiert — gleiches
-        // Sanitization-Profil wie der Request-Pfad verhindert stored-XSS und Payload-Bombs.
+        // TMMS legt die Eingabe ungefiltert in der Session ab. Dieselbe Bereinigung wie im
+        // Request-Weg hält Markup und Überlängen aus Payload und Bestellung.
         $session = $this->buildSession([
             TmmsConstants::sessionKey(1, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => '<script>alert("xss")</script>100cm',
@@ -313,14 +352,14 @@ final class TmmsPayloadReaderTest extends TestCase
 
         $result = $this->reader->readSessionData($session, 'SW10001');
 
-        // Sanitization-Layer kappt auch im Session-Pfad bei MAX_VALUE_LENGTH (2000)
+        // Auch der Session-Weg kappt bei MAX_VALUE_LENGTH (2000).
         self::assertSame(2000, mb_strlen($result[1][TmmsConstants::SESSION_VALUE_KEY]));
     }
 
     #[Test]
     public function readSessionDataIgnoresNonStringFieldValues(): void
     {
-        // Manipulierte Session: Wert als Array → wird leer behandelt → Feld übersprungen
+        // Ein Array als Wert gilt als leer, das Feld fällt weg.
         $session = $this->buildSession([
             TmmsConstants::sessionKey(1, 'SW10001') => [
                 TmmsConstants::SESSION_VALUE_KEY => ['nested' => 'array'],

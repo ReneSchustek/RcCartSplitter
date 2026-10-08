@@ -15,6 +15,11 @@ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
+/**
+ * Prüft, dass der Subscriber die Werte aller Provider in den Payload der Position schreibt und bei
+ * gleichem Schlüssel der spätere Provider gewinnt. Ohne das kämen Kundeneingaben gar nicht oder
+ * von der falschen Quelle in den Warenkorb.
+ */
 #[CoversClass(CartInputCaptureSubscriber::class)]
 final class CartInputCaptureSubscriberTest extends TestCase
 {
@@ -69,7 +74,7 @@ final class CartInputCaptureSubscriberTest extends TestCase
         $lineItem = new LineItem('li-1', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $subscriber->onBeforeLineItemAdded($this->createEvent($lineItem));
 
-        // Reihenfolge der Provider definiert die Präzedenz — letzter gewinnt.
+        // Die Reihenfolge der Provider entscheidet; der letzte gewinnt.
         self::assertSame('second', $lineItem->getPayload()['key'] ?? null);
     }
 

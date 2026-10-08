@@ -12,8 +12,13 @@ use Shopware\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoadedEvent;
 use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-// Läuft nach TMMS (Prio -50) und überschreibt dessen Extensions, weil TMMS die Werte
-// aus der Session pro Produktnummer setzt und damit alle Split-Positionen identisch macht.
+/**
+ * Korrigiert die TMMS-Anzeige in Offcanvas-Warenkorb, Warenkorb und Bestellbestätigung.
+ *
+ * TMMS hängt an jede Position Extensions mit den Session-Werten der Produktnummer, sodass alle
+ * getrennten Positionen eines Artikels dasselbe zeigen. Priorität -50 lässt diesen Subscriber
+ * nach TMMS (Priorität 0) laufen und dessen Extensions mit den Werten der Position überschreiben.
+ */
 final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
 {
     public static function getSubscribedEvents(): array
@@ -48,9 +53,9 @@ final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // Wenn rcTmmsActive gesetzt ist, ist der Position-Payload autoritativ. Für leere Felder
-        // muss die TMMS-Extension entfernt werden, sonst leakt der Session-Wert (gleicher
-        // Produktnummer-Eintrag für alle Split-Positionen) in die Anzeige.
+        // Mit `rcTmmsActive` ist der Payload der Position maßgeblich. Für ein leeres Feld wird die
+        // TMMS-Extension entfernt, sonst zeigte die Position den Session-Wert einer anderen.
+        // Ohne Marker ist unklar, ob der Payload vollständig ist; dann wird nur ergänzt.
         for ($i = 1; $i <= TmmsConstants::INPUT_COUNT; $i++) {
             [$value, $label] = $this->resolveField($i, $payload, $sessionInputs);
 
@@ -81,6 +86,7 @@ final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
             return null;
         }
 
+        // Den Inhalt schreibt der eigene Provider; er wird hier nicht noch einmal geprüft.
         /** @var array<int, array<string, string>> $raw */
         return $raw;
     }
@@ -99,7 +105,7 @@ final class CartDisplayCorrectionSubscriber implements EventSubscriberInterface
             return [$value, $label];
         }
 
-        // Defense-in-Depth: Alt-Carts ohne rcTmmsActive haben den Session-Schlüssel als einzige Quelle.
+        // Positionen ohne `rcTmmsActive` tragen nur den Sammelschlüssel; er ist dann die einzige Quelle.
         $sessionEntry = $sessionInputs[$i] ?? null;
         if (!is_array($sessionEntry)) {
             return ['', ''];

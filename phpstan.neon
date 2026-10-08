@@ -8,6 +8,18 @@ parameters:
     bootstrapFiles:
         - vendor/autoload.php
     ignoreErrors:
+        # `EntitySearchResult` bleibt in 6.8 bestehen, sie **erbt nur nicht mehr** von
+        # `EntityCollection`. Wer die Entitäten über `getEntities()` holt — und das tut dieses
+        # Plugin überall —, merkt davon nichts. Es gibt hier nichts zu migrieren; die Meldungen
+        # sind Vorankündigungen von Shopware, keine Befunde am eigenen Code, und fallen mit der
+        # Anhebung auf 6.8 als Mindestfassung von selbst weg. Einzeln aufgeführt statt als
+        # erzeugte Baseline, damit auffällt, wenn die Liste wächst.
+        #
+        # Betroffen wären nur Sammlungs-Methoden direkt am Suchergebnis (`first()`, `filter()`, …).
+        # Die gibt es hier nicht — geprüft beim Umstieg auf die Schreibweise von Shopware 6.8.
+        -
+            message: '#(Call to method \w+\(\) of deprecated class|Instantiation of deprecated class|Access to constant on deprecated class|Return type of (anonymous function|method) [^ ]* ?has typehint with deprecated class) Shopware\\Core\\Framework\\DataAbstractionLayer\\Search\\EntitySearchResult#'
+
         # In Tests gibt es keinen Aufrufer, aus dem sich ein Kontext ableiten ließe. Ein aufgebauter
         # Nutzerkontext täuschte eine Abhängigkeit vor, die der Test gar nicht hat.
         -

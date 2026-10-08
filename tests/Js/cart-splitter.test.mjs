@@ -1,6 +1,10 @@
-// Unit-Tests für cart-splitter.plugin.js. Zero-Dependency: Node-Standardbibliothek (node:test).
-// Die Storefront-Quelle wird zur Testzeit eingelesen, `import`/`export` rausgestrippt
-// und mit einer Stub-Plugin-Basisklasse evaluiert — so testen wir den echten Source ohne Webpack-Bundler.
+// Unit-Tests für cart-splitter.plugin.js: Hash, Kennungsbildung, Label-Bereinigung, Suffix-Sammlung
+// und das Einfügen der Hidden-Felder beim Absenden. Ein Fehler dort ließe Shopware Positionen mit
+// verschiedenen Eingaben zusammenlegen oder gleiche unnötig trennen.
+//
+// Ohne Abhängigkeiten, nur node:test. Die Storefront-Quelle wird zur Testzeit eingelesen, von
+// `import`/`export` befreit und mit einer Ersatz-Basisklasse ausgewertet; so läuft der echte
+// Quelltext ohne Webpack.
 
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -202,7 +206,7 @@ function makeFullTmmsForm({ value = '', placeholder = '', label = '' } = {}) {
     };
 }
 
-// Minimal-DOM-Stubs nur für _injectHiddenFields(): kein jsdom, nur das, was die Methode braucht.
+// Minimaler DOM-Ersatz nur für _injectHiddenFields(): kein jsdom, nur das, was die Methode braucht.
 function withDom(tmmsForms, fn) {
     const previousDocument = globalThis.document;
     globalThis.document = {
@@ -242,10 +246,9 @@ function makePluginWithForm(productId = PRODUCT_ID, dataset = {}) {
 }
 
 describe('_injectHiddenFields — Submit-Capture-Pfad', () => {
-    // Der Bugfix-Vertrag: ohne vorher gefeuerte change/input-Events (z. B. Select-Wert
-    // programmatisch gesetzt, Datepicker-Update, Race mit dem Submit) muss die LineItem-ID
-    // beim Submit trotzdem auf dem Hash der aktuellen TMMS-Werte landen — sonst merged
-    // Shopware Positionen, die fachlich getrennt gehören.
+    // Auch ohne vorher gefeuerte change/input-Ereignisse (Auswahlwert per Skript gesetzt,
+    // Datumswähler, Wettlauf mit dem Absenden) muss die Positionskennung beim Absenden auf dem Hash
+    // der aktuellen TMMS-Werte landen. Sonst legt Shopware Positionen zusammen, die getrennt gehören.
     test('berechnet die LineItem-ID neu, auch wenn vorher kein input/change gefeuert hat', () => {
         const plugin = makePluginWithForm();
         const tmmsForm = makeFullTmmsForm({ value: 'Wert A', placeholder: 'Länge', label: 'Länge' });

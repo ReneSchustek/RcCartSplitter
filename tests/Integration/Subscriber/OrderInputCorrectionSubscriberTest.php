@@ -30,6 +30,14 @@ use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPage;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Prüft gegen eine echte Datenbank, dass nach OrderPlaced und auf der Finish-Seite jede
+ * Bestellposition die TMMS-Werte aus ihrem eigenen Payload in den custom_fields trägt und
+ * Positionen ohne Marker unberührt bleiben.
+ *
+ * Die Unit-Tests ersetzen Repository und Connection; erst hier zeigt sich, ob das UPDATE mit
+ * CASE auf MySQL tatsächlich die richtigen Zeilen trifft. TMMS selbst ist dabei nicht beteiligt.
+ */
 #[CoversClass(OrderInputCorrectionSubscriber::class)]
 #[CoversClass(OrderInputCorrectionService::class)]
 final class OrderInputCorrectionSubscriberTest extends TestCase
@@ -39,7 +47,8 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
 
     protected function setUp(): void
     {
-        // Plattform-Bootstrap nur in CI vorhanden — lokal überspringen
+        // KERNEL_CLASS fehlt, wenn bootstrap.php keine Shopware-Installation gefunden hat; dann gibt
+        // es keine Datenbank, in die der Test schreiben könnte.
         if (!class_exists(\Shopware\Core\Kernel::class) || getenv('KERNEL_CLASS') === false) {
             self::markTestSkipped('Shopware-Kernel nicht verfügbar — Integration-Test läuft nur in der Plattform-Test-Umgebung.');
         }
@@ -143,7 +152,7 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
         $context = Context::createDefaultContext();
         $orderData = $this->getOrderData($orderId, $context)[0];
 
-        // Erstes LineItem: überschreiben mit unserer ID + TMMS-Payload
+        // Erste Position: vorgegebene Kennung und TMMS-Payload.
         $orderData['lineItems'][0]['id'] = $firstLineItemId;
         $orderData['lineItems'][0]['payload'] = [
             TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
@@ -151,14 +160,14 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
             TmmsConstants::payloadLabelKey(1) => 'Länge',
         ];
 
-        // Zweites LineItem: gleicher Datensatz, andere ID, optional ohne Payload
+        // Zweite Position: derselbe Datensatz mit anderer Kennung, ohne Payload, wenn keiner übergeben wird.
         $secondItem = $orderData['lineItems'][0];
         $secondItem['id'] = $secondLineItemId;
         $secondItem['identifier'] = 'test-2';
         $secondItem['payload'] = $payloadForSecond ?? [];
         $orderData['lineItems'][] = $secondItem;
 
-        // Delivery-Position muss auf das erste LineItem zeigen — ID auch dort durchziehen
+        // Die Lieferposition der Vorlage verweist auf die erste Position und braucht deren neue Kennung.
         $orderData['deliveries'][0]['positions'][0]['orderLineItemId'] = $firstLineItemId;
         $orderData['deliveries'][0]['positions'][0]['price'] = new CalculatedPrice(
             10,

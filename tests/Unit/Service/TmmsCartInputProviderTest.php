@@ -26,6 +26,14 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
+/**
+ * Prüft, woher der TMMS-Provider die Eingaben nimmt: zuerst aus dem Request, sonst aus der
+ * Session über die Produktnummer. Außerdem, dass er bei fehlender Produktnummer, fremden Kennungen
+ * und Datenbankfehlern leer zurückkommt, statt zu werfen.
+ *
+ * Der Provider hängt im Add-to-Cart-Weg. Eine Ausnahme dort bricht das Hinzufügen ab, ein
+ * falscher Vorrang zeigte getrennten Positionen wieder dieselben Session-Werte.
+ */
 #[CoversClass(TmmsCartInputProvider::class)]
 final class TmmsCartInputProviderTest extends TestCase
 {
@@ -40,7 +48,7 @@ final class TmmsCartInputProviderTest extends TestCase
         $this->requestStack = new RequestStack();
         $this->connection = $this->createMock(Connection::class);
         $this->payloadReader = new TmmsPayloadReader();
-        // NullLogger für Default — Tests, die das Warning verifizieren wollen, überschreiben das.
+        // Kein Test prüft die Warnung bei Datenbankfehlern; der NullLogger nimmt sie auf.
         $this->logger = new NullLogger();
 
         $this->provider = new TmmsCartInputProvider(
@@ -90,7 +98,7 @@ final class TmmsCartInputProviderTest extends TestCase
         $lineItem = $this->createLineItem($productId);
         $event = $this->createEvent($productId, $lineItem);
 
-        // Session/Connection dürfen NICHT gefragt werden, wenn Request-Payload reicht
+        // Reicht der Request, wird die Datenbank nicht gefragt.
         $this->connection->expects(self::never())->method('fetchOne');
 
         $result = $this->provider->provide($event);
@@ -127,14 +135,14 @@ final class TmmsCartInputProviderTest extends TestCase
 
         $result = $this->provider->provide($event);
 
-        // Session-Fallback liefert dieselbe Form wie der JS-Pfad: rcTmmsActive + Einzelfelder.
-        // Sonst sehen Twig-Template und Display-Korrektur die Session-Daten nicht und alle
-        // Split-Positionen zeigen den gleichen Session-Wert.
+        // Der Session-Weg liefert dieselbe Form wie das Storefront-Skript: rcTmmsActive und
+        // Einzelfelder. Sonst sähen Twig-Template und Anzeigekorrektur die Werte nicht, und alle
+        // getrennten Positionen zeigten denselben Session-Wert.
         self::assertSame('1', $result[TmmsConstants::PAYLOAD_TMMS_ACTIVE]);
         self::assertSame('50cm', $result[TmmsConstants::payloadValueKey(1)]);
         self::assertSame('Länge', $result[TmmsConstants::payloadLabelKey(1)]);
 
-        // Sammel-Key bleibt zusätzlich erhalten — Order-Korrektur deckt damit Altbestellungen ab.
+        // Der Sammelschlüssel steht zusätzlich im Ergebnis.
         self::assertArrayHasKey(TmmsConstants::PAYLOAD_TMMS_INPUTS, $result);
         $inputs = $result[TmmsConstants::PAYLOAD_TMMS_INPUTS];
         self::assertSame('50cm', $inputs[1][TmmsConstants::SESSION_VALUE_KEY]);
@@ -169,7 +177,7 @@ final class TmmsCartInputProviderTest extends TestCase
             ->method('fetchOne')
             ->willThrowException($this->createMock(DbalException::class));
 
-        // DB-Fehler darf AddToCart nicht killen — leere Antwort, kein Throw
+        // Ein Datenbankfehler darf das Hinzufügen nicht abbrechen: leere Antwort, keine Ausnahme.
         self::assertSame([], $this->provider->provide($event));
     }
 
@@ -194,14 +202,14 @@ final class TmmsCartInputProviderTest extends TestCase
     }
 
     /**
-     * Der Test zum Gutschein-Ausfall.
+     * Ein Gutschein-Platzhalter trägt in `referencedId` den Code, keine UUID
+     * (Kern: `PromotionItemBuilder::buildPlaceholderItem()`). Gelangte "Sommer2026" an
+     * `Uuid::fromHexToBytes()`, stiege eine `InvalidUuidException` bis in den Storefront-Controller,
+     * und kein Gutscheincode wäre mehr einlösbar.
      *
-     * Ein Gutschein-Platzhalter trägt in `referencedId` den **Code**, keine UUID
-     * (Core `PromotionItemBuilder::buildPlaceholderItem()`). Der Provider hielt jedes
-     * Line-Item für ein Produkt, reichte "Sommer2026" an `Uuid::fromHexToBytes()` weiter
-     * und ließ die `InvalidUuidException` bis in den Storefront-Controller steigen. Der
-     * fing sie generisch ab — Kunde sah "Leider ist etwas schiefgelaufen", das Log blieb
-     * stumm. Auf Live war damit **kein einziger Gutscheincode einlösbar**.
+     * Der Request hier hat keine Session, der Provider kehrt deshalb schon vor der UUID-Prüfung
+     * zurück. Den Weg mit Session deckt provideDoesNotThrowWhenReferencedIdIsNoUuid ab; die
+     * Typprüfung, die Gutscheine gar nicht erst zum Provider lässt, sitzt im CartInputCaptureSubscriber.
      */
     #[Test]
     public function provideIgnoresPromotionPlaceholderWithNonUuidReferencedId(): void
@@ -216,9 +224,9 @@ final class TmmsCartInputProviderTest extends TestCase
     }
 
     /**
-     * Auch ein Produkt-Line-Item kann eine `referencedId` tragen, die keine UUID ist —
-     * etwa aus einem fremden Plugin, das eine eigene Kennung setzt. Der Provider darf
-     * darauf nicht mit einer Ausnahme reagieren, denn er hängt im Add-to-Cart-Pfad.
+     * Auch eine Produktposition kann eine `referencedId` tragen, die keine UUID ist, etwa aus
+     * einem fremden Plugin mit eigener Kennung. Der Provider darf darauf nicht mit einer Ausnahme
+     * reagieren, denn er hängt im Add-to-Cart-Weg.
      */
     #[Test]
     public function provideDoesNotThrowWhenReferencedIdIsNoUuid(): void
@@ -235,9 +243,8 @@ final class TmmsCartInputProviderTest extends TestCase
     }
 
     /**
-     * Der `catch` soll halten, was sein Kommentar verspricht: "Ein Fehler darf AddToCart
-     * nicht killen." Bis zur Fassung 2.1.3 fing er nur `DbalException` — jede andere Ausnahme stieg
-     * durch. Hier steht stellvertretend eine `RuntimeException`.
+     * Der `catch` fängt jede Ausnahme, nicht nur `DbalException`; ein Fehler beim Nachschlagen
+     * darf das Hinzufügen nicht abbrechen. Stellvertretend steht hier eine `RuntimeException`.
      */
     #[Test]
     public function provideSurvivesAnyDatabaseFailureNotJustDbalExceptions(): void
@@ -255,8 +262,9 @@ final class TmmsCartInputProviderTest extends TestCase
     }
 
     /**
-     * Gegenprobe: Der Produktpfad bleibt unangetastet. Ohne diesen Test könnte die
-     * Korrektur den eigentlichen Zweck des Plugins mit abschalten.
+     * Gegenprobe zu den Tests mit fremden Kennungen: Eine gültige Produktkennung mit Marker im
+     * Request liefert weiterhin Werte. Eine zu scharfe Prüfung schaltete sonst unbemerkt den
+     * eigentlichen Zweck des Plugins ab. Der Request-Weg erreicht die UUID-Prüfung dabei nicht.
      */
     #[Test]
     public function provideStillReadsTheProductPathAfterTheGuard(): void

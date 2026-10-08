@@ -14,8 +14,12 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-// Läuft nach TMMS, weil TMMS sonst alle Split-Positionen mit den gleichen Session-Daten überschreibt;
-// die eigentliche Korrektur liegt im OrderInputCorrectionService.
+/**
+ * Stößt nach dem Bestellabschluss die Korrektur der TMMS-Eingaben in den Bestellpositionen an.
+ *
+ * TMMS schreibt die Session-Werte bei beiden Ereignissen in die custom_fields aller Positionen
+ * eines Artikels. Die eigentliche Korrektur liegt im OrderInputCorrectionService.
+ */
 final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
 {
     /** @param EntityRepository<OrderLineItemCollection> $orderLineItemRepository */
@@ -27,7 +31,8 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
 
     public static function getSubscribedEvents(): array
     {
-        // Beide Events: TMMS schreibt sowohl bei OrderPlaced als auch bei FinishPageLoaded zurück
+        // TMMS schreibt bei beiden Ereignissen mit Priorität 0. -500 lässt die Korrektur nach TMMS
+        // und nach anderen Listenern mit Standardpriorität laufen, sodass ihr Stand der letzte ist.
         return [
             CheckoutOrderPlacedEvent::class => ['onOrderPlaced', -500],
             CheckoutFinishPageLoadedEvent::class => ['onCheckoutFinish', -500],
@@ -48,6 +53,8 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
 
     private function correctOrder(string $orderId, Context $context, ?OrderLineItemCollection $memoryItems): void
     {
+        // Die Korrektur arbeitet auf dem gespeicherten Stand mit den custom_fields, die TMMS gerade
+        // geschrieben hat. Die Positionen am Ereignis können fehlen, `getLineItems()` darf null sein.
         $freshItems = $this->loadLineItemsFromDb($orderId, $context);
 
         if ($freshItems->count() === 0) {
@@ -61,8 +68,9 @@ final class OrderInputCorrectionSubscriber implements EventSubscriberInterface
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('orderId', $orderId));
-        // Defensive Obergrenze: B2B-Bestellungen mit Tausenden Positionen sollen nicht den
-        // Checkout-Subscriber sprengen. 500 deckt jeden realistischen Fall ab.
+        // Obergrenze, damit eine B2B-Bestellung mit Tausenden Positionen den Checkout nicht
+        // ausbremst. 500 liegt weit über dem, was eine Bestellung mit Kundeneingaben realistisch
+        // umfasst; was darüber liegt, bleibt unkorrigiert.
         $criteria->setLimit(500);
 
         /** @var OrderLineItemCollection $collection */

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Ruhrcoder\RcCartSplitter\Service;
 
 /**
- * Quelle, aus der der aufgelöste TMMS-Hinweistext stammt — für Logging
- * und Nachvollziehbarkeit bei Support-Anfragen.
+ * Quelle des aufgelösten TMMS-Hinweistexts. Sie steht im Protokoll, damit sich bei einer
+ * Rückfrage zeigen lässt, woher ein Text kam. `Default` heißt: Es greift das Snippet.
  */
 enum TmmsInfoMessageScope: string
 {

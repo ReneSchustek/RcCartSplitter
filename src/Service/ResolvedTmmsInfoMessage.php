@@ -7,8 +7,10 @@ namespace Ruhrcoder\RcCartSplitter\Service;
 use Shopware\Core\Framework\Struct\Struct;
 
 /**
- * Ergebnis der Scope-Auflösung für den TMMS-Hinweistext. `message=null`
- * signalisiert „nichts gesetzt" — der Twig-Fallback nutzt das Snippet.
+ * Ergebnis der Auflösung des TMMS-Hinweistexts. `message = null` heißt „nirgends gesetzt", das
+ * Template zeigt dann das Snippet.
+ *
+ * Erbt von Struct, weil `addExtension()` an der Seite nur Structs annimmt.
  */
 final class ResolvedTmmsInfoMessage extends Struct
 {
@@ -23,6 +25,7 @@ final class ResolvedTmmsInfoMessage extends Struct
         return $this->message;
     }
 
+    /** Der Scope als Text, damit ein Template ihn ohne Enum-Zugriff vergleichen kann. */
     public function getScope(): string
     {
         return $this->scope->value;

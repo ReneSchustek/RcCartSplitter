@@ -241,7 +241,7 @@ Ohne Bootstrap überspringen die Tests sich selbst — `composer test` führt nu
 
 ## Versionen
 
-Vollständige Versions-Historie: [`CHANGELOG_de-DE.md`](CHANGELOG_de-DE.md) (deutsch) bzw. [`CHANGELOG_en-GB.md`](CHANGELOG_en-GB.md) (englisch). Die Dateien folgen der Shopware-Plugin-Manager-Konvention und werden im Admin direkt angezeigt.
+Vollständige Versions-Historie: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Release-Prozess
 

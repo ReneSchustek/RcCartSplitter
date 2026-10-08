@@ -1,20 +1,25 @@
 import Plugin from 'src/plugin-system/plugin.class';
 
-// TMMS-Felder liegen in eigenen Formularen (ID-Schema productCustomerInputForm-{productId}-{count}) —
-// dieses Plugin sammelt sie pro Produkt, leitet daraus eine deterministische LineItem-ID ab und
-// injiziert die Werte als Hidden-Felder, damit der Cart sie ohne weiteren Round-Trip anzeigen kann.
-// Suffix-Daten sind generisch: jedes Plugin schreibt seinen Wert in form.dataset.rc*Suffix und meldet
-// die Änderung über das gemeinsame CustomEvent rcSuffixChanged. Neue Suffix-Plugins
-// brauchen keine Code-Änderung in dieser Datei mehr.
-// Erweiterungs-Howto: README, Abschnitt "Erweiterung: weitere Suffix-Plugins".
+/**
+ * Trennt Warenkorbpositionen desselben Artikels nach ihren TMMS-Eingaben.
+ *
+ * Shopware fasst Positionen mit gleicher Kennung zusammen. Das Plugin leitet die Kennung deshalb
+ * aus Produkt, TMMS-Werten und den Suffixen anderer Plugins ab: gleiche Eingaben ergeben dieselbe
+ * Position, abweichende eine eigene. Die TMMS-Felder liegen in eigenen Formularen außerhalb des
+ * Kaufformulars (ID-Schema productCustomerInputForm-{productId}-{count}); ihre Werte gehen beim
+ * Absenden als Hidden-Felder in den Payload der Position.
+ *
+ * Suffix-Plugins schreiben ihren Wert in form.dataset.rc*Suffix und melden die Änderung über das
+ * Ereignis rcSuffixChanged; diese Datei kennt sie nicht einzeln. Anleitung: README, Abschnitt
+ * „Erweiterung: weitere Suffix-Plugins".
+ */
 export default class CartSplitterPlugin extends Plugin {
 
-    // Muss mit TmmsConstants::INPUT_COUNT (PHP) übereinstimmen
+    // TMMS bietet fünf Felder je Produkt; muss mit TmmsConstants::INPUT_COUNT (PHP) übereinstimmen.
     static TMMS_MAX_FIELDS = 5;
 
-    // Generisches Suffix-Event aus dem Plugin-Interaktionsprotokoll. Bewusst neutraler Namespace —
-    // kein Plugin owned den Namen, jedes Suffix-Plugin (RcColorPicker, RcDynamicPrice, ...) feuert ihn
-    // nach jeder Wert-Änderung.
+    // Der Name gehört keinem einzelnen Plugin. Jedes Suffix-Plugin (RcColorPicker, RcDynamicPrice, …)
+    // feuert ihn nach jeder Wertänderung am Kaufformular.
     static SUFFIX_CHANGED_EVENT = 'rcSuffixChanged';
 
     init() {
@@ -25,6 +30,8 @@ export default class CartSplitterPlugin extends Plugin {
             return;
         }
 
+        // Der Schlüssel in lineItems[…] ist die Produktkennung und bleibt fest; umgeschrieben wird
+        // nur der Wert des id-Felds.
         const match = this._idInput.name.match(/lineItems\[([^\]]+)]\[id]/);
         this._productId = match ? match[1] : null;
         if (!this._productId) {
@@ -36,7 +43,7 @@ export default class CartSplitterPlugin extends Plugin {
             return;
         }
 
-        // Markiert dieses Form: andere Ruhrcoder-Plugins dürfen die LineItem-ID nicht mehr ändern
+        // Andere Ruhrcoder-Plugins lesen diese Markierung und lassen die Positionskennung dann in Ruhe.
         this._form.dataset.rcIdController = 'true';
 
         this._payloadPrefix = 'lineItems[' + this._productId + '][payload]';
@@ -73,10 +80,11 @@ export default class CartSplitterPlugin extends Plugin {
             input.addEventListener('input', this._boundUpdate);
         });
 
-        // Ein einziger Listener: jedes Suffix-Plugin signalisiert seine Änderung über das generische Event.
+        // Ein Listener für alle Suffix-Plugins, weil sie dasselbe Ereignis feuern.
         this._form.addEventListener(CartSplitterPlugin.SUFFIX_CHANGED_EVENT, this._boundSuffixChanged);
 
-        // capture: true → feuert VOR Shopware-AddToCartPlugin (das auf bubble lauscht)
+        // Capture-Phase: Das AddToCartPlugin des Kerns lauscht ohne capture am selben Formular und
+        // liest FormData beim Absenden. Die Hidden-Felder müssen vorher stehen.
         this._form.addEventListener('submit', this._boundBeforeSubmit, true);
     }
 
@@ -114,17 +122,20 @@ export default class CartSplitterPlugin extends Plugin {
         if (hasValues || allSuffixes) {
             this._idInput.value = this._computeId(values, allSuffixes);
         } else {
+            // Ohne Eingaben bleibt die Produktkennung, damit die Position mit einer gewöhnlichen
+            // Position desselben Artikels zusammenfällt.
             this._idInput.value = this._productId;
         }
     }
 
-    // Capture-Phase vor Shopware-AddToCartPlugin: Werte müssen Teil von FormData(form) sein
+    // Läuft in der Capture-Phase vor dem AddToCartPlugin, damit die Werte Teil von FormData(form) sind.
     _injectHiddenFields() {
-        // Defensiv die ID neu berechnen — input/change feuern bei Select, Datepicker
-        // und programmatisch gesetzten Werten nicht zuverlässig, ohne Suffix-Plugin
-        // (z. B. RcDynamicPrice) bliebe die ID dann auf dem Initial-Wert hängen.
+        // Die Kennung wird beim Absenden noch einmal berechnet. input und change feuern bei
+        // Auswahllisten, Datumswählern und per Skript gesetzten Werten nicht zuverlässig; ohne ein
+        // Suffix-Plugin, das zwischendurch neu rechnen lässt, bliebe die Kennung sonst auf dem Startwert.
         this._updateLineItemId();
 
+        // Ein zweites Absenden ohne Neuladen fände sonst die Felder vom ersten Mal doppelt vor.
         this._form.querySelectorAll('input[data-rc-tmms]').forEach(el => el.remove());
 
         let hasAnyValue = false;
@@ -155,6 +166,7 @@ export default class CartSplitterPlugin extends Plugin {
             hasAnyValue = true;
         }
 
+        // Der Marker nur bei mindestens einem Wert: Ohne ihn greift serverseitig der Session-Weg.
         if (hasAnyValue) {
             this._addHidden(this._payloadPrefix + '[rcTmmsActive]', '1');
         }
@@ -201,7 +213,9 @@ export default class CartSplitterPlugin extends Plugin {
         return values;
     }
 
-    // Generisches Suffix-Protokoll: andere Plugins schreiben rc*Suffix ans Form, hier ohne Sonderfälle einbinden
+    // Andere Plugins schreiben rc*Suffix ans Formular; jedes solche Attribut zählt, ohne Sonderfälle.
+    // Sortiert, damit die Reihenfolge, in der die Plugins ihre Werte setzen, die Kennung nicht ändert.
+    // NUL kommt in Formularwerten praktisch nicht vor und trennt die Teile deshalb eindeutig.
     _collectAllSuffixes() {
         const parts = [];
         const dataset = this._form.dataset;
@@ -235,6 +249,10 @@ export default class CartSplitterPlugin extends Plugin {
         const valueHashHex = valueHash.toString(16).padStart(8, '0');
         const productScopedHashHex = productScopedHash.toString(16).padStart(8, '0');
 
+        // 16 Zeichen Produktkennung plus zwei 32-Bit-Hashes ergeben 32 Hex-Zeichen im UUID-Format.
+        // Der Produktanteil macht die Position beim Nachsehen im Warenkorb zuordenbar; der zweite
+        // Hash bezieht die volle Produktkennung ein, damit zwei Produkte mit gleichem Präfix und
+        // gleichen Eingaben nicht zusammenfallen.
         const productSegment = this._productId.replace(/-/g, '');
         const combinedUuid = productSegment.substring(0, 16) + valueHashHex + productScopedHashHex;
 
@@ -249,6 +267,8 @@ export default class CartSplitterPlugin extends Plugin {
 
     _fnv32a(str) {
         // FNV-1a 32-Bit: deterministisch und kollisionsarm bei kurzen Strings, ohne Crypto-API im Browser nutzbar.
+        // 0x811c9dc5 und 0x01000193 sind Startwert und Primzahl dieser Variante; Math.imul und >>> 0
+        // halten die Rechnung in vorzeichenlosen 32 Bit.
         let hash = 0x811c9dc5;
         for (let i = 0; i < str.length; i++) {
             hash ^= str.charCodeAt(i);

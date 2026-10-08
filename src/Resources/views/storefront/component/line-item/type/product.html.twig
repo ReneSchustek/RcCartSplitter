@@ -4,15 +4,16 @@
     {{ parent() }}
 
     {% if lineItem.payload.rcTmmsActive is defined %}
-        {# Konstante zentral pflegen (PHP/JS halten denselben Wert) #}
+        {# Dieselbe Feldzahl wie in PHP; das Storefront-Skript führt sie als eigene Kopie in TMMS_MAX_FIELDS. #}
         {% set maxFields = constant('Ruhrcoder\\RcCartSplitter\\TmmsConstants::INPUT_COUNT') %}
-        {# dl/dt/dd plus aria-label: Screenreader bekommen Gruppen-Bezeichnung vor den Begriff-Wert-Paaren (WCAG 1.3.1) #}
-        {# text-body-secondary statt text-muted: garantierter Kontrast >= 4.5:1 (WCAG 1.4.3) #}
+        {# dl/dt/dd plus aria-label: Screenreader bekommen eine Gruppenbezeichnung vor den Begriff-Wert-Paaren (WCAG 1.3.1). #}
+        {# text-body-secondary ersetzt das in Bootstrap 5.3 veraltete text-muted; der Shopware-Skin setzt diese Farbe auf die Textfarbe, der Kontrast bleibt der des Fließtexts (WCAG 1.4.3). #}
         <dl class="rc-cart-splitter-inputs row small text-body-secondary mt-1 mb-0"
             aria-label="{{ 'rc-cart-splitter.lineItemInputs'|trans|sw_sanitize }}">
             {% for i in 1..maxFields %}
                 {% set value = lineItem.payload['rcTmmsField' ~ i ~ 'Value']|default('') %}
                 {% set label = lineItem.payload['rcTmmsField' ~ i ~ 'Label']|default('') %}
+                {# Ein Label ohne Wert bleibt weg; ein Wert ohne Label steht für sich. #}
                 {% if value is not empty %}
                     {% if label is not empty %}
                         <dt class="col-auto fw-bold">{{ label }}</dt>

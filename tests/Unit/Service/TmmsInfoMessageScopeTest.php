@@ -7,6 +7,10 @@ namespace Ruhrcoder\RcCartSplitter\Tests\Unit\Service;
 use PHPUnit\Framework\TestCase;
 use Ruhrcoder\RcCartSplitter\Service\TmmsInfoMessageScope;
 
+/**
+ * Hält die Textwerte des Scope-Enums fest. Sie stehen im Protokoll; ein umbenannter Wert machte
+ * ältere Einträge mit neueren unvergleichbar, ohne dass ein anderer Test fehlschlägt.
+ */
 final class TmmsInfoMessageScopeTest extends TestCase
 {
     public function testCasesCoverAllFourScopes(): void

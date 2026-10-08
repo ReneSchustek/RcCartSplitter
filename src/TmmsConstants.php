@@ -4,19 +4,35 @@ declare(strict_types=1);
 
 namespace Ruhrcoder\RcCartSplitter;
 
-/** Konstanten und Builder für die Interaktion mit TmmsProductCustomerInputs */
+/**
+ * Schlüsselnamen, die TmmsProductCustomerInputs in Session, Positions-Extensions und
+ * Bestell-custom_fields verwendet, plus die eigenen Payload-Schlüssel dieses Plugins.
+ *
+ * Die TMMS-Namen sind fremd vorgegeben und dürfen sich hier nicht ändern, sonst liest und
+ * überschreibt dieses Plugin ins Leere. An einer Stelle gesammelt, weil Erfassung, Anzeige- und
+ * Bestellkorrektur dieselben Namen bilden müssen.
+ */
 final class TmmsConstants
 {
-    /** Maximale Anzahl der TMMS-Eingabefelder pro Produkt */
+    /**
+     * TMMS bietet je Produkt genau fünf Eingabefelder (`TmmsProductCustomerInputs::CUSTOMER_INPUT_COUNT`).
+     * Das Storefront-Skript hält denselben Wert in `TMMS_MAX_FIELDS`; ändert TMMS die Zahl, sind beide nachzuziehen.
+     */
     public const INPUT_COUNT = 5;
 
     /** Prefix der Session-Keys: tmms_customer_input_{count}_{productNumber} */
     public const SESSION_KEY_PREFIX = 'tmms_customer_input_';
 
-    /** Payload-Schlüssel: gesicherte TMMS-Eingaben pro LineItem (Session-Fallback, Altbestellungen) */
+    /**
+     * Sammelschlüssel im Positions-Payload mit den vollständigen Session-Einträgen je Feld.
+     * Ihn liest die Bestell- und Anzeigekorrektur nur bei Positionen ohne `rcTmmsActive`.
+     */
     public const PAYLOAD_TMMS_INPUTS = 'rc_tmms_inputs';
 
-    /** Payload-Marker: TMMS-Felder sind aktiv (vom JS gesetzt oder im Session-Fallback) */
+    /**
+     * Markiert eine Position, deren Einzelfelder im Payload maßgeblich sind. Gesetzt vom
+     * Storefront-Skript als Hidden-Feld oder vom Session-Weg des TmmsCartInputProvider.
+     */
     public const PAYLOAD_TMMS_ACTIVE = 'rcTmmsActive';
 
     /** Payload-Prefix/-Suffix für Value/Label pro Feld: rcTmmsField{i}Value / rcTmmsField{i}Label */
@@ -24,7 +40,7 @@ final class TmmsConstants
     public const PAYLOAD_FIELD_VALUE_SUFFIX = 'Value';
     public const PAYLOAD_FIELD_LABEL_SUFFIX = 'Label';
 
-    /** Session-Value-Keys innerhalb eines TMMS-Eintrags (von TMMS-Plugin geschrieben) */
+    /** Schlüssel innerhalb eines Session-Eintrags, so wie TMMS sie schreibt */
     public const SESSION_VALUE_KEY = 'tmms_customer_input_value';
     public const SESSION_LABEL_KEY = 'tmms_customer_input_label';
     public const SESSION_PLACEHOLDER_KEY = 'tmms_customer_input_placeholder';

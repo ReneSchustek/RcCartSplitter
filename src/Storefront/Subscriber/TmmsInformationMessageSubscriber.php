@@ -10,9 +10,11 @@ use Shopware\Storefront\Page\Product\QuickView\MinimalQuickViewPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
- * Hängt den aufgelösten TMMS-Hinweistext als Page-Extension `rcCartSplitterTmmsInfo`
- * an Produktdetail- und Quickview-Seiten. Die Twig-Decoration nutzt das, um den
- * TMMS-Default-Alert mit dem Plugin-Override zu füllen.
+ * Hängt den aufgelösten TMMS-Hinweistext als Page-Extension `rcCartSplitterTmmsInfo` an die
+ * Produktdetailseite und die Quickview-Seite.
+ *
+ * Gelesen wird die Extension im überschriebenen Block der Buy-Widget-Vorlage. Für die Quickview
+ * überschreibt dieses Plugin keinen Block; dort hängt die Extension an, ohne angezeigt zu werden.
  */
 final class TmmsInformationMessageSubscriber implements EventSubscriberInterface
 {

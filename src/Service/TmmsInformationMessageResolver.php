@@ -11,11 +11,11 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
- * Löst den TMMS-Hinweistext per Scope-Hierarchie auf:
- * Produkt → Kategorie-Chain → Plugin-Config → null.
+ * Ermittelt den Hinweistext unter den TMMS-Eingabefeldern in der Reihenfolge
+ * Produkt → Kategoriekette → Plugin-Konfiguration → null (dann greift das Snippet im Template).
  *
- * Leere Strings werden überall als „nicht gesetzt" behandelt, damit ein
- * leerer Override nicht einen vorhandenen weiter unten überstimmt.
+ * Ein leerer oder nur aus Leerzeichen bestehender Text gilt überall als „nicht gesetzt", damit ein
+ * geleertes Feld am Produkt den Text der Kategorie nicht mit nichts überstimmt.
  */
 final class TmmsInformationMessageResolver implements TmmsInformationMessageResolverInterface
 {
@@ -75,6 +75,8 @@ final class TmmsInformationMessageResolver implements TmmsInformationMessageReso
 
     private function primaryCategoryId(ProductEntity $product): ?string
     {
+        // Die Produktseite lädt `mainCategories` mit. Genommen wird die erste geladene
+        // Hauptkategorie, ohne Abgleich mit dem Verkaufskanal. Fehlt sie, bleibt die Kategorieliste.
         $mainCategories = $product->getMainCategories();
         if ($mainCategories !== null) {
             $firstMain = $mainCategories->first();
@@ -91,8 +93,8 @@ final class TmmsInformationMessageResolver implements TmmsInformationMessageReso
             return null;
         }
 
-        // Deterministisch erste Kategorie nehmen — bei Mehrfach-Zuweisung gewinnt
-        // die alphabetisch erste UUID, was reproduzierbar bleibt.
+        // Bei mehreren Kategorien gewinnt die kleinste Kennung. Fachlich ist das beliebig, aber
+        // stabil: Derselbe Artikel zeigt bei jedem Aufruf denselben Text.
         sort($categoryIds);
 
         return $categoryIds[0];
@@ -126,7 +128,8 @@ final class TmmsInformationMessageResolver implements TmmsInformationMessageReso
         string $message,
         TmmsInfoMessageScope $scope,
     ): ResolvedTmmsInfoMessage {
-        // Scope-Herkunft im Log macht Support-Anfragen „warum sieht der Kunde Text X?" trivial.
+        // Mit der Herkunft im Protokoll lässt sich die Frage „Warum sieht der Kunde diesen Text?"
+        // ohne Nachrechnen beantworten.
         $this->logger->info('RcCartSplitter: TMMS-Hinweistext aufgelöst', [
             'productId' => $product->getId(),
             'scope' => $scope->value,

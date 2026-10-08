@@ -12,7 +12,12 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-/** Korrigiert TMMS-Kundeneingaben in den custom_fields der Bestellpositionen */
+/**
+ * Schreibt die TMMS-Eingaben jeder Bestellposition aus ihrem eigenen Payload in die custom_fields.
+ *
+ * TMMS füllt die custom_fields aus der Session, und die kennt je Produktnummer nur einen Wert.
+ * Bei mehreren Positionen desselben Artikels stünde sonst überall die zuletzt eingegebene Angabe.
+ */
 final class OrderInputCorrectionService implements OrderInputCorrectorInterface
 {
     public function __construct(
@@ -21,8 +26,9 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
     ) {
     }
 
-    // DBAL umgeht DAL-Events, damit TMMS unsere Korrektur nicht per EntityWrittenEvent zurückschreibt;
-    // Batch-CASE-WHEN in einer Transaktion vermeidet N Roundtrips bei großen Bestellungen.
+    // Geschrieben wird per DBAL am DAL vorbei: Die Korrektur ist rein kosmetisch und soll keine
+    // Write-Events, Indexer oder Flows auslösen. Ein UPDATE mit CASE für alle Positionen spart
+    // bei großen Bestellungen eine Abfrage je Position.
     public function correctLineItems(
         OrderLineItemCollection $freshItems,
         ?OrderLineItemCollection $memoryItems,
@@ -46,8 +52,8 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
                 $this->batchUpdateCustomFields($connection, $corrections);
             });
         } catch (DbalException|\JsonException $e) {
-            // Cosmetic-Fix darf den Checkout nicht killen — Fehler aggregiert loggen und abbrechen.
-            // Exception-Objekt statt -message: Monolog ergänzt Stack-Trace für Root-Cause.
+            // Die Bestellung steht bereits; eine gescheiterte Korrektur darf den Checkout nicht
+            // abbrechen. Das Ausnahme-Objekt unter `exception` bringt den Stack-Trace ins Protokoll.
             $this->logger->error('TMMS-Korrektur fehlgeschlagen', [
                 'lineItemIds' => array_keys($corrections),
                 'count' => count($corrections),
@@ -60,6 +66,9 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
             'count' => count($corrections),
         ]);
 
+        // Erst nach dem erfolgreichen UPDATE: Die Objekte im Speicher sollen nie etwas zeigen, das
+        // nicht in der Datenbank steht. TMMS hat die Positionen des Ereignisses zuvor selbst
+        // überschrieben, deshalb werden beide Sammlungen angeglichen.
         foreach ($corrections as $hexId => $customFields) {
             $freshItems->get($hexId)?->setCustomFields($customFields);
             $memoryItems?->get($hexId)?->setCustomFields($customFields);
@@ -71,7 +80,8 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
     {
         $payload = $lineItem->getPayload() ?? [];
 
-        // Bevorzugt JS-Payload — Session-Fallback nur für Altbestellungen ohne Hidden-Felder
+        // Die Einzelfelder haben Vorrang. Der Sammelschlüssel zählt nur bei Positionen, die keinen
+        // `rcTmmsActive`-Marker tragen.
         $customFields = $this->buildFromPayloadKeys($payload, $lineItem->getCustomFields() ?? []);
         if ($customFields === null) {
             $customFields = $this->buildFromSessionData($payload, $lineItem->getCustomFields() ?? []);
@@ -91,6 +101,8 @@ final class OrderInputCorrectionService implements OrderInputCorrectorInterface
             return null;
         }
 
+        // Alle fünf Felder werden geschrieben, auch leere: Ein Wert, den TMMS aus der Session einer
+        // anderen Position eingetragen hat, muss überschrieben werden.
         for ($i = 1; $i <= TmmsConstants::INPUT_COUNT; $i++) {
             $customFields[TmmsConstants::customFieldValueKey($i)] = $payload[TmmsConstants::payloadValueKey($i)] ?? '';
             $customFields[TmmsConstants::customFieldLabelKey($i)] = $payload[TmmsConstants::payloadLabelKey($i)] ?? '';

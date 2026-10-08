@@ -56,7 +56,7 @@ $violations = [];
 foreach ($thresholds as $prefix => $threshold) {
     $statements = $aggregate[$prefix]['statements'];
     $covered = $aggregate[$prefix]['covered'];
-    // 0 statements: nichts zu prüfen — als 100% behandeln, kein Verstoss
+    // 0 statements: nichts zu prüfen — als 100% behandeln, kein Verstoß
     $pct = $statements === 0 ? 100.0 : ($covered / $statements) * 100.0;
 
     $label = trim($prefix, '/');
@@ -64,7 +64,7 @@ foreach ($thresholds as $prefix => $threshold) {
 
     if ($pct + 1e-9 < $threshold) {
         $violations[] = $line;
-        fwrite(STDERR, "Coverage-Gate Verstoss: {$line}\n");
+        fwrite(STDERR, "Coverage-Gate Verstoß: {$line}\n");
     } else {
         fwrite(STDOUT, $line . "\n");
     }

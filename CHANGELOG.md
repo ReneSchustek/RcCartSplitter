@@ -1,3 +1,17 @@
+# 2.1.6
+
+- **Der Hinweis unter dem Eingabefeld in richtigem Deutsch.** Statt „Geben Sie bei unterschiedlichen Bedarfen
+  jeweils abweichende Werte ein — …“ steht jetzt: „Jede abweichende Eingabe ergibt eine eigene Position im
+  Warenkorb. Gleiche Eingaben erhöhen die Menge der vorhandenen Position.“ Eine eigene Meldung an Produkt oder
+  Kategorie geht weiterhin vor.
+
+> **Deployment:** `plugin:update RcCartSplitter`, `cache:clear`.
+
+# 2.1.5
+
+- **Über die Store-API fiel die Kundeneingabe still aus.** Die Storefront schickt die Positionen als `lineItems`, die Store-API als `items`; gelesen wurde nur der erste Name. Nichts brach ab — es kam nur nichts an, und der Artikel landete ohne Eingabe im Warenkorb. Jetzt werden beide Namen gelesen, so wie es RcColorPicker und RcCustomFields längst tun.
+- Gelesen wird bewusst über `all()` **ohne** Schlüssel: Mit Schlüssel wirft der ParameterBag bei einem skalaren Wert eine Ausnahme und macht aus einem krummen Aufruf eine 400.
+
 # 2.1.4
 
 - **Vorbereitung auf die nächste Shopware-Hauptversion.** Der Zugriff auf Suchergebnisse folgt der Schreibweise, die Shopware 6.8 verlangt. Am Verhalten ändert sich nichts.

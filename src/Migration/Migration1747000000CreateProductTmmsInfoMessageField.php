@@ -9,9 +9,12 @@ use Shopware\Core\Framework\Migration\MigrationStep;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
- * Custom-Field-Set `rc_cart_splitter` am Produkt mit Feld
- * `rc_cart_splitter_tmms_info_message`. Überschreibt den TMMS-Hinweistext
- * positionsspezifisch (höchste Scope-Priorität).
+ * Legt das Custom-Field-Set `rc_cart_splitter` am Produkt mit dem Feld
+ * `rc_cart_splitter_tmms_info_message` an. Ein dort gesetzter Text überschreibt den
+ * TMMS-Hinweistext für dieses Produkt und hat Vorrang vor Kategorie und Plugin-Konfiguration.
+ *
+ * Geschrieben wird per SQL mit Existenzprüfung je Schritt, damit ein erneuter Lauf nach einem
+ * Abbruch nichts doppelt anlegt.
  */
 final class Migration1747000000CreateProductTmmsInfoMessageField extends MigrationStep
 {

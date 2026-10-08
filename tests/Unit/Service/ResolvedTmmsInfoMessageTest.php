@@ -8,6 +8,11 @@ use PHPUnit\Framework\TestCase;
 use Ruhrcoder\RcCartSplitter\Service\ResolvedTmmsInfoMessage;
 use Ruhrcoder\RcCartSplitter\Service\TmmsInfoMessageScope;
 
+/**
+ * Prüft, dass das Ergebnisobjekt Text und Scope unverändert weitergibt, über Getter wie über die
+ * öffentlichen Eigenschaften. Das Template liest `message`; ein vertauschter Wert zeigte dem
+ * Kunden einen falschen Hinweis.
+ */
 final class ResolvedTmmsInfoMessageTest extends TestCase
 {
     public function testConstructStoresMessageAndScope(): void

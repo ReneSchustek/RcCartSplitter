@@ -9,9 +9,13 @@ use Shopware\Core\Framework\Migration\MigrationStep;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
- * Custom-Field-Set `rc_cart_splitter_category` an der Kategorie mit Feld
- * `rc_cart_splitter_cat_tmms_info_message`. Globaler `custom_field.name`-
- * UNIQUE-Index erzwingt eigenen Namensraum gegenüber dem Produktfeld.
+ * Legt das Custom-Field-Set `rc_cart_splitter_category` an der Kategorie mit dem Feld
+ * `rc_cart_splitter_cat_tmms_info_message` an. Der Text gilt für alle Produkte der Kategorie und
+ * ihrer Unterkategorien, sofern das Produkt keinen eigenen setzt.
+ *
+ * Der Feldname weicht vom Produktfeld ab, weil `custom_field.name` über alle Entitäten eindeutig
+ * sein muss. Geschrieben wird per SQL mit Existenzprüfung je Schritt, damit ein erneuter Lauf nach
+ * einem Abbruch nichts doppelt anlegt.
  */
 final class Migration1747000010CreateCategoryTmmsInfoMessageField extends MigrationStep
 {

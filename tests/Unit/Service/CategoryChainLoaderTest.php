@@ -12,6 +12,11 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 
+/**
+ * Prüft, dass der Kettenlader die Kategorie zuerst und danach ihre Vorfahren vom nächsten zur
+ * Wurzel liefert. Stimmte die Reihenfolge nicht, gewänne im Resolver der Text einer entfernteren
+ * Kategorie über den der näheren.
+ */
 final class CategoryChainLoaderTest extends TestCase
 {
     public function testReturnsEmptyChainWhenPrimaryCategoryNotFound(): void
@@ -53,7 +58,7 @@ final class CategoryChainLoaderTest extends TestCase
         $loader = new CategoryChainLoader($repo);
         $chain = $loader->loadChain('cat-leaf', Context::createDefaultContext());
 
-        // Erwartet: leaf (primary) zuerst, dann mid (nächster Vorfahr), dann root
+        // Erwartet: leaf zuerst, dann mid als nächster Vorfahr, dann root.
         self::assertCount(3, $chain);
         self::assertSame('cat-leaf', $chain[0]['id']);
         self::assertSame('cat-mid', $chain[1]['id']);
@@ -64,7 +69,7 @@ final class CategoryChainLoaderTest extends TestCase
     {
         $primary = $this->createCategory('cat-leaf', '|cat-root|cat-mid|', []);
         $root = $this->createCategory('cat-root', '', []);
-        // cat-mid wird nicht geliefert (z.B. weil deaktiviert)
+        // cat-mid fehlt im Suchergebnis, etwa weil sie gelöscht ist, während der Pfad noch auf sie zeigt.
 
         $repo = $this->createMock(EntityRepository::class);
         $repo->method('search')->willReturnOnConsecutiveCalls(
@@ -75,7 +80,7 @@ final class CategoryChainLoaderTest extends TestCase
         $loader = new CategoryChainLoader($repo);
         $chain = $loader->loadChain('cat-leaf', Context::createDefaultContext());
 
-        // Erwartet: leaf + root, mid übersprungen
+        // Erwartet: leaf und root, mid fällt heraus.
         self::assertCount(2, $chain);
         self::assertSame('cat-leaf', $chain[0]['id']);
         self::assertSame('cat-root', $chain[1]['id']);
@@ -87,7 +92,7 @@ final class CategoryChainLoaderTest extends TestCase
         $primary->setUniqueIdentifier('cat-x');
         $primary->setId('cat-x');
         $primary->setPath('');
-        // customFields bewusst nicht gesetzt
+        // customFields bleiben ungesetzt, getCustomFields() liefert null.
 
         $repo = $this->createMock(EntityRepository::class);
         $repo->method('search')->willReturn($this->resultWith([$primary]));

@@ -12,8 +12,14 @@ use Shopware\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-// Bevorzugt JS-Payload; Session-Fallback liest productNumber per Native-SQL,
-// um teure ProductEntity-Hydration pro AddToCart zu vermeiden.
+/**
+ * Liefert die TMMS-Eingaben einer neuen Warenkorbposition als Payload-Werte.
+ *
+ * Erste Quelle sind die Hidden-Felder, die das Storefront-Skript beim Absenden einfügt. Fehlen
+ * sie, etwa bei abgeschaltetem JavaScript, liest der Provider die Session, in der TMMS die Werte
+ * je Produktnummer ablegt. Die Produktnummer kommt dafür per SQL statt über das Repository: Eine
+ * volle ProductEntity bei jedem Hinzufügen zu laden, kostet mehr als die eine Spalte.
+ */
 final class TmmsCartInputProvider implements CartInputProviderInterface
 {
     public function __construct(
@@ -31,6 +37,8 @@ final class TmmsCartInputProvider implements CartInputProviderInterface
             return [];
         }
 
+        // Das Ereignis feuert nach `Cart::add()`. Lag die Position schon im Warenkorb, steckt die
+        // Menge in der vorhandenen Position, und die aus dem Ereignis ist nur noch eine Kopie.
         $lineItem = $event->getCart()->get($event->getLineItem()->getId()) ?? $event->getLineItem();
         $productId = $lineItem->getReferencedId();
         if ($productId === null) {
@@ -61,9 +69,9 @@ final class TmmsCartInputProvider implements CartInputProviderInterface
     }
 
     /**
-     * Session-Fallback muss dieselbe Payload-Form wie der JS-Pfad erzeugen.
-     * Sonst sehen Twig-Template (`rcTmmsField<N>Value`) und Display-Korrektur die Daten
-     * nicht und alle Split-Positionen eines Produktes zeigen dieselben Session-Werte.
+     * Baut aus den Session-Einträgen dieselbe Payload-Form, die das Storefront-Skript liefert.
+     * Sonst sehen Twig-Template (`rcTmmsField<N>Value`) und Anzeigekorrektur die Daten
+     * nicht, und alle getrennten Positionen eines Produkts zeigen dieselben Session-Werte.
      *
      * @param array<int, array<string, string>> $sessionInputs
      * @return array<string, mixed>
@@ -77,7 +85,8 @@ final class TmmsCartInputProvider implements CartInputProviderInterface
             $unified[TmmsConstants::payloadLabelKey($count)] = $data[TmmsConstants::SESSION_LABEL_KEY] ?? '';
         }
 
-        // Altbestellungen ohne rcTmmsActive nutzen weiterhin den Sammel-Key — Order-Korrektur bleibt kompatibel.
+        // Der Sammelschlüssel steht zusätzlich da. Die Korrekturen lesen ihn nur, wo `rcTmmsActive`
+        // fehlt oder ein Einzelfeld leer ist; neben den Einzelfeldern oben kommt das nicht vor.
         $unified[TmmsConstants::PAYLOAD_TMMS_INPUTS] = $sessionInputs;
 
         return $unified;
@@ -85,29 +94,28 @@ final class TmmsCartInputProvider implements CartInputProviderInterface
 
     private function fetchProductNumber(string $productId): ?string
     {
-        // Nicht darauf verlassen, dass der Aufrufer eine UUID liefert.
+        // `referencedId` ist nicht zwingend eine UUID. Ein Gutschein-Platzhalter trägt dort den
+        // Code, ein fremdes Plugin vielleicht eine eigene Kennung. `Uuid::fromHexToBytes()` würfe
+        // dann, die Ausnahme stiege bis in den Storefront-Controller, und der Kunde sähe nur
+        // „Leider ist etwas schiefgelaufen", ohne Eintrag im Protokoll.
         //
-        // `Uuid::fromHexToBytes()` wirft bei allem, was keine ist. Ein Gutschein-Platzhalter
-        // trägt in `referencedId` den **Code** statt einer Kennung — die Ausnahme stieg bis in
-        // den Storefront-Controller, der sie generisch abfing. Ergebnis auf Live: Kein
-        // Gutscheincode war mehr einlösbar, der Kunde sah "Leider ist etwas schiefgelaufen",
-        // und im Protokoll stand nichts.
-        //
-        // Kein Protokolleintrag hier: Der Fall ist erwartbar, sobald ein anderes Plugin eine
-        // eigene Kennung setzt. Eine Warnung je Warenkorb-Zugang wäre Rauschen.
+        // Kein Protokolleintrag hier: Der Fall ist erwartbar, eine Warnung je Warenkorb-Zugang
+        // wäre Rauschen.
         if (!Uuid::isValid($productId)) {
             return null;
         }
 
+        // Der Primärschlüssel von `product` ist (id, version_id). Ohne Versionsfilter kann die
+        // Abfrage mehrere Zeilen treffen; LIMIT 1 nimmt dann eine davon ohne feste Reihenfolge.
         try {
             $productNumber = $this->connection->fetchOne(
                 'SELECT product_number FROM product WHERE id = :id LIMIT 1',
                 ['id' => Uuid::fromHexToBytes($productId)],
             );
         } catch (\Throwable $error) {
-            // Bewusst `\Throwable` und nicht nur `DbalException`: Der Vorsatz war immer "ein
-            // Fehler darf den Warenkorb-Zugang nicht killen". Die engere Fassung hielt das
-            // nicht — sie ließ genau die Ausnahme durch, die den Gutschein-Fehler auslöste.
+            // `\Throwable` statt nur `DbalException`: Der Provider hängt im Add-to-Cart-Weg, und
+            // jede Ausnahme, die hier durchsteigt, bricht das Hinzufügen ab. Ohne Produktnummer
+            // fehlt nur der Session-Rückweg, der Artikel landet trotzdem im Warenkorb.
             $this->logger->warning('TMMS-Cart-Provider konnte product_number nicht laden', [
                 'productId' => $productId,
                 'exception' => $error,

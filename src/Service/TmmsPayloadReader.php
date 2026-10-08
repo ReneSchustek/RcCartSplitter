@@ -8,18 +8,53 @@ use Ruhrcoder\RcCartSplitter\TmmsConstants;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
-/** Liest TMMS-Kundeneingaben aus Request-Payload oder Session — sanitisiert an beiden Eingangs-Pfaden gleich. */
+/**
+ * Liest TMMS-Kundeneingaben aus dem Request-Payload oder aus der TMMS-Session.
+ *
+ * Beide Quellen sind Kundeneingaben und laufen durch dieselbe Bereinigung: Tags entfernen, Länge
+ * kappen, Nicht-Skalare verwerfen. Was hier durchkommt, landet ungeprüft im Warenkorb-Payload und
+ * später in den custom_fields der Bestellposition.
+ */
 final class TmmsPayloadReader
 {
-    // Schutz vor Payload-Bombs — längere Eingaben sprengen die JSON-Spalte custom_fields ohnehin
+    // Eine Kundeneingabe ist ein Maß, eine Farbe oder eine kurze Notiz. 2000 Zeichen lassen dafür
+    // reichlich Luft und begrenzen, was ein manipulierter Request je Feld in Warenkorb und
+    // Bestellung schreiben kann.
     private const MAX_VALUE_LENGTH = 2000;
+
+    /**
+     * Die Storefront schickt die Positionen als `lineItems`, die Store-API als `items`. Wer nur
+     * den ersten Namen liest, sieht über den zweiten Weg nichts, und die Kundeneingabe fällt
+     * still aus. RcColorPicker und RcCustomFields lesen ebenfalls beide Namen.
+     *
+     * Gesucht wird die Position unter dem Schlüssel der Produktkennung. Die Storefront schlüsselt
+     * `lineItems` so; eine Store-API-Liste mit fortlaufenden Indizes, wie `CartItemAddRoute` sie
+     * annimmt, trifft dieser Zugriff nur, wenn der Aufrufer die Einträge ebenfalls nach
+     * Produktkennung schlüsselt.
+     */
+    private const PARAMETER_NAMES = ['lineItems', 'items'];
 
     /** @return array<string, string> */
     public function readRequestPayload(Request $request, string $productId): array
     {
-        $lineItems = $request->request->all('lineItems');
+        // `all()` ohne Schlüssel: Mit Schlüssel wirft der InputBag bei einem skalaren Wert eine
+        // BadRequestException und macht aus einem krummen Request eine 400.
+        $allParameters = $request->request->all();
 
-        $itemData = $lineItems[$productId] ?? null;
+        $itemData = null;
+        foreach (self::PARAMETER_NAMES as $parameterName) {
+            $items = $allParameters[$parameterName] ?? null;
+            if (!is_array($items)) {
+                continue;
+            }
+
+            $candidate = $items[$productId] ?? null;
+            if (is_array($candidate)) {
+                $itemData = $candidate;
+                break;
+            }
+        }
+
         if (!is_array($itemData)) {
             return [];
         }
@@ -29,6 +64,8 @@ final class TmmsPayloadReader
             return [];
         }
 
+        // Ohne Marker hat das Storefront-Skript keine Werte eingefügt; dann greift im Provider der
+        // Session-Weg.
         if (!isset($payload[TmmsConstants::PAYLOAD_TMMS_ACTIVE])) {
             return [];
         }
@@ -37,6 +74,7 @@ final class TmmsPayloadReader
 
         for ($i = 1; $i <= TmmsConstants::INPUT_COUNT; $i++) {
             $value = $this->sanitizeFrom($payload, TmmsConstants::payloadValueKey($i));
+            // Ein Label ohne Wert hätte in Anzeige und Bestellung nichts zu beschriften.
             if ($value === '') {
                 continue;
             }
@@ -61,13 +99,13 @@ final class TmmsPayloadReader
             }
 
             $data = $session->get($key, []);
-            // Manipulierte Session darf den nachfolgenden Array-Zugriff nicht sprengen
+            // Ein Nicht-Array im Session-Eintrag würde den folgenden Schlüsselzugriff sprengen.
             if (!is_array($data)) {
                 continue;
             }
 
-            // Sanitisierung auf der Session-Seite identisch zum Request-Pfad — sonst landen
-            // Roh-Strings (Tags, Überlängen) im Cart-Payload und in custom_fields.
+            // TMMS speichert die Eingabe so, wie der Kunde sie abgeschickt hat. Ohne dieselbe
+            // Bereinigung wie im Request-Weg landeten Tags und Überlängen im Payload und in custom_fields.
             $value = $this->sanitizeFrom($data, TmmsConstants::SESSION_VALUE_KEY);
             if ($value === '') {
                 continue;
@@ -90,7 +128,7 @@ final class TmmsPayloadReader
         return $this->sanitize($this->normalizeScalar($source[$key] ?? null));
     }
 
-    // Nicht-Skalare (Arrays/Objekte) werden verworfen, damit nichts ungeprüft weiterläuft
+    // Arrays und Objekte werden zum leeren Text, sie lassen sich nicht sinnvoll in einen Wert wandeln.
     private function normalizeScalar(mixed $raw): string
     {
         if (!is_scalar($raw)) {
@@ -100,7 +138,7 @@ final class TmmsPayloadReader
         return trim((string) $raw);
     }
 
-    // HTML-Tags raus + Länge kappen, bevor der Wert in Payload/custom_fields landet
+    // Gekappt wird nach dem Entfernen der Tags, damit Markup nicht von der erlaubten Länge zehrt.
     private function sanitize(string $value): string
     {
         $stripped = strip_tags($value);

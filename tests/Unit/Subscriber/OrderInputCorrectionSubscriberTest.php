@@ -25,6 +25,11 @@ use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPage;
 use Shopware\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Prüft, dass der Subscriber nach TMMS läuft, die Positionen frisch aus dem Repository lädt und
+ * mit den Positionen am Ereignis an den Service übergibt. Liefe er vor TMMS, überschriebe TMMS
+ * die Korrektur gleich wieder.
+ */
 #[CoversClass(OrderInputCorrectionSubscriber::class)]
 final class OrderInputCorrectionSubscriberTest extends TestCase
 {
@@ -49,7 +54,7 @@ final class OrderInputCorrectionSubscriberTest extends TestCase
     {
         $events = OrderInputCorrectionSubscriber::getSubscribedEvents();
 
-        // Prio -500 ist Pflicht, damit TMMS nicht nach uns überschreibt
+        // -500 liegt unter der Priorität 0 von TMMS; sonst überschriebe TMMS die Korrektur danach.
         self::assertSame(['onOrderPlaced', -500], $events[CheckoutOrderPlacedEvent::class]);
         self::assertSame(['onCheckoutFinish', -500], $events[CheckoutFinishPageLoadedEvent::class]);
     }

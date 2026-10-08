@@ -17,6 +17,14 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
 use Shopware\Core\Framework\Uuid\Uuid;
 
+/**
+ * Prüft die Bestellkorrektur ohne Datenbank: welche Werte aus Payload oder Sammelschlüssel in die
+ * custom_fields gehen, dass alles in einem UPDATE innerhalb einer Transaktion landet und dass ein
+ * Datenbankfehler protokolliert statt geworfen wird.
+ *
+ * Fiele einer dieser Punkte, stünden in Bestellungen wieder die Werte einer anderen Position, oder
+ * eine gescheiterte Korrektur bräche den Checkout ab.
+ */
 #[CoversClass(OrderInputCorrectionService::class)]
 final class OrderInputCorrectionServiceTest extends TestCase
 {
@@ -34,8 +42,6 @@ final class OrderInputCorrectionServiceTest extends TestCase
             $this->logger,
         );
     }
-
-    // --- correctLineItems (Batch-UPDATE + Transaktion + Error-Flow) ---
 
     #[Test]
     public function correctLineItemsDoesNothingWhenNoCorrections(): void
@@ -86,7 +92,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
                 return 2;
             });
 
-        // Aggregierter Log-Eintrag, NICHT pro LineItem
+        // Ein Protokolleintrag für alle Positionen, nicht einer je Position.
         $this->logger
             ->expects(self::once())
             ->method('debug')
@@ -100,7 +106,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
         self::assertStringContainsString('WHERE id IN', $capturedSql);
         self::assertCount(4, $capturedParams ?? [], 'Pro LineItem ein id- und ein cf-Parameter');
 
-        // In-Memory-Update wurde durchgeführt
+        // Die Objekte im Speicher tragen danach die neuen Werte.
         self::assertSame('100cm', $itemA->getCustomFields()[TmmsConstants::customFieldValueKey(1)] ?? null);
         self::assertSame('200cm', $itemB->getCustomFields()[TmmsConstants::customFieldValueKey(1)] ?? null);
     }
@@ -119,7 +125,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
             ->method('transactional')
             ->willThrowException($this->createMock(DbalException::class));
 
-        // Fehler darf den Checkout nicht killen — error-Log statt throw
+        // Ein Fehler darf den Checkout nicht abbrechen: Protokolleintrag statt Ausnahme.
         $this->logger
             ->expects(self::once())
             ->method('error')
@@ -131,7 +137,7 @@ final class OrderInputCorrectionServiceTest extends TestCase
 
         $this->service->correctLineItems($fresh, null);
 
-        // In-Memory wurde NICHT korrigiert (DB-Write fehlgeschlagen)
+        // Die Objekte im Speicher bleiben unverändert, weil nichts geschrieben wurde.
         self::assertSame([], $item->getCustomFields());
     }
 
@@ -157,8 +163,6 @@ final class OrderInputCorrectionServiceTest extends TestCase
 
         self::assertSame('100cm', $memory->getCustomFields()[TmmsConstants::customFieldValueKey(1)] ?? null);
     }
-
-    // --- correctLineItems: Mapping aus Payload-Schlüsseln ---
 
     #[Test]
     public function correctLineItemsWritesPayloadFieldsToCustomFields(): void
@@ -208,13 +212,11 @@ final class OrderInputCorrectionServiceTest extends TestCase
         $customFields = $this->captureWrittenCustomFields($payload);
 
         self::assertNotNull($customFields);
-        // Felder 2..INPUT_COUNT sind leer befüllt
+        // Die Felder 2 bis INPUT_COUNT stehen als leere Texte da.
         self::assertSame('', $customFields[TmmsConstants::customFieldValueKey(2)]);
         self::assertSame('', $customFields[TmmsConstants::customFieldLabelKey(2)]);
         self::assertSame('', $customFields[TmmsConstants::customFieldValueKey(5)]);
     }
-
-    // --- correctLineItems: Mapping aus Session-Daten ---
 
     #[Test]
     public function correctLineItemsSkipsWhenSessionInputsEmptyArray(): void
@@ -307,9 +309,9 @@ final class OrderInputCorrectionServiceTest extends TestCase
     }
 
     /**
-     * Black-Box-Aufruf von correctLineItems mit einem Single-Item-Setup. Fängt das
-     * via DBAL geschriebene customFields-JSON ab und gibt es decodiert zurück.
-     * Liefert null, wenn kein UPDATE stattfand (Service hat die Korrektur übersprungen).
+     * Ruft correctLineItems mit einer einzelnen Position auf, fängt das geschriebene
+     * customFields-JSON ab und gibt es decodiert zurück. Null heißt: kein UPDATE, der Service
+     * hat die Position übersprungen.
      *
      * @param array<string, mixed> $payload
      * @param array<string, mixed> $existingCustomFields
@@ -342,8 +344,8 @@ final class OrderInputCorrectionServiceTest extends TestCase
     }
 
     /**
-     * Black-Box-Erwartung: correctLineItems fasst Connection nicht an, weil keine
-     * Korrektur ausgelöst wurde.
+     * Erwartet, dass correctLineItems die Connection nicht anfasst, weil die Position nichts zu
+     * korrigieren hat.
      *
      * @param array<string, mixed> $payload
      */
