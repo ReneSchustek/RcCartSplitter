@@ -1,3 +1,19 @@
+# 2.1.7
+
+- **Über die Store-API kommt die Kundeneingabe jetzt tatsächlich an.** 2.1.5 las den Namen `items`, suchte die
+  Position darin aber über die Produktkennung als Schlüssel. Die Store-API schickt eine Liste, in der die Kennung
+  im Eintrag steht; gefunden wurde dort nie etwas. Gesucht wird jetzt in beiden Formen.
+- **Die Produktnummer für den Rückweg über die Sitzung kommt aus der Live-Fassung des Artikels**, nicht aus
+  einem Entwurf, der in der Verwaltung offen ist.
+- **Der Hinweistext aus der Kategorie richtet sich nach dem Verkaufskanal.** Ein Artikel mit Hauptkategorien in
+  mehreren Kanälen nahm bisher die erste, die geladen wurde.
+- Aufgeräumt: ein Zuhörer auf ein Ereignis, das niemand sendet, die Berechnung des Hinweises für die
+  Schnellansicht, die ihn nie zeigte, und ein überflüssiger Filter in der Vorlage.
+- Tests, die den Gutscheinschutz und den Rückweg über die Sitzung nur scheinbar prüften, prüfen ihn jetzt; dazu
+  ein Test für die Typprüfung, die Gutscheine von den Kundeneingaben fernhält.
+
+> **Deployment:** `plugin:update RcCartSplitter`, `cache:clear`. Neues Storefront-Skript (fertig gebaut im Paket).
+
 # 2.1.6
 
 - **Der Hinweis unter dem Eingabefeld in richtigem Deutsch.** Statt „Geben Sie bei unterschiedlichen Bedarfen

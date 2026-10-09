@@ -40,8 +40,8 @@ final class TmmsPayloadReaderTest extends TestCase
     /**
      * Die Store-API nimmt dieselben Positionen unter `items` entgegen. Ohne diesen Weg fiele die
      * Kundeneingabe über die Schnittstelle still aus: Nichts bricht ab, es kommt nur nichts an.
-     * Der Test schlüsselt `items` nach Produktkennung; eine Liste mit fortlaufenden Indizes deckt er
-     * nicht ab.
+     * Hier nach Produktkennung geschlüsselt; die Liste, die die Store-API tatsächlich schickt, prüft
+     * der folgende Test.
      */
     #[Test]
     public function readRequestPayloadReadsTheStoreApiParameterName(): void
@@ -61,6 +61,34 @@ final class TmmsPayloadReaderTest extends TestCase
 
         self::assertNotSame([], $result, 'Über die Store-API muss die Eingabe ankommen.');
         self::assertContains('Wert aus der Schnittstelle', $result);
+    }
+
+    /**
+     * Was: `items` als Liste mit fortlaufenden Indizes, die Kennung steht im Eintrag.
+     * Warum: So schickt die Store-API die Positionen. Der Zugriff über die Kennung als Schlüssel
+     *        fand dort nie etwas, die Eingabe kam über die Schnittstelle nicht an.
+     * Erwartet: Der Eintrag mit passender `referencedId` wird gelesen, der andere nicht.
+     */
+    #[Test]
+    public function readRequestPayloadFindsTheItemInAStoreApiList(): void
+    {
+        $request = new Request(request: [
+            'items' => [
+                ['referencedId' => 'anderer-artikel', 'payload' => [
+                    TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
+                    TmmsConstants::payloadValueKey(1) => 'falscher Wert',
+                ]],
+                ['referencedId' => 'product-123', 'payload' => [
+                    TmmsConstants::PAYLOAD_TMMS_ACTIVE => '1',
+                    TmmsConstants::payloadValueKey(1) => 'Wert aus der Liste',
+                ]],
+            ],
+        ]);
+
+        $result = $this->reader->readRequestPayload($request, 'product-123');
+
+        self::assertContains('Wert aus der Liste', $result);
+        self::assertNotContains('falscher Wert', $result);
     }
 
     /**

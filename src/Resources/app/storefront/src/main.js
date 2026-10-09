@@ -4,9 +4,5 @@ import CartSplitterPlugin from './cart-splitter/cart-splitter.plugin';
 const PluginManager = window.PluginManager;
 PluginManager.register('CartSplitter', CartSplitterPlugin, 'form[action*="checkout/line-item/add"]');
 
-// Soll CartSplitter nach einem Variantenwechsel an die neu aufgebaute Buybox binden, und zwar nur
-// dieses Plugin statt aller Storefront-Plugins der Seite. Der Kern sendet `onVariantChange` nicht;
-// nach dem Austausch der Buybox ruft er selbst `PluginManager.initializePlugins()` auf.
-document.$emitter.subscribe('onVariantChange', () => {
-    window.PluginManager.initializePlugin('CartSplitter');
-});
+// Nach einem Variantenwechsel tauscht der Kern die Buybox aus und ruft selbst
+// `PluginManager.initializePlugins()` auf; das Plugin bindet sich dabei neu an das Kaufformular.

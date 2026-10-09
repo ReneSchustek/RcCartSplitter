@@ -34,6 +34,34 @@ final class TmmsPayloadReader
      */
     private const PARAMETER_NAMES = ['lineItems', 'items'];
 
+    /**
+     * Die Storefront schlüsselt die Positionen nach Produktkennung, die Store-API schickt `items` als
+     * Liste. In der Liste steht die Kennung im Eintrag selbst, als `referencedId` oder `id`.
+     *
+     * @param array<mixed> $items
+     *
+     * @return array<mixed>|null
+     */
+    private function findItem(array $items, string $productId): ?array
+    {
+        $keyed = $items[$productId] ?? null;
+        if (is_array($keyed)) {
+            return $keyed;
+        }
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            if (($item['referencedId'] ?? null) === $productId || ($item['id'] ?? null) === $productId) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
     /** @return array<string, string> */
     public function readRequestPayload(Request $request, string $productId): array
     {
@@ -48,9 +76,8 @@ final class TmmsPayloadReader
                 continue;
             }
 
-            $candidate = $items[$productId] ?? null;
-            if (is_array($candidate)) {
-                $itemData = $candidate;
+            $itemData = $this->findItem($items, $productId);
+            if ($itemData !== null) {
                 break;
             }
         }

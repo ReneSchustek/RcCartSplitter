@@ -33,6 +33,23 @@ final class CartInputCaptureSubscriberTest extends TestCase
     }
 
     #[Test]
+    public function aPromotionNeverReachesTheProviders(): void
+    {
+        // Der eigentliche Gutscheinschutz: Ein Gutschein-Platzhalter trägt den Code in
+        // `referencedId`. Fragte ein Provider damit nach einer Produktnummer, bräche das Einlösen ab.
+        $provider = $this->createMock(CartInputProviderInterface::class);
+        $provider->expects(self::never())->method('provide');
+        $subscriber = new CartInputCaptureSubscriber([$provider]);
+
+        $lineItem = new LineItem('promotion-1', LineItem::PROMOTION_LINE_ITEM_TYPE);
+        $lineItem->setReferencedId('Sommer2026');
+
+        $subscriber->onBeforeLineItemAdded($this->createEvent($lineItem));
+
+        self::assertSame([], $lineItem->getPayload());
+    }
+
+    #[Test]
     public function appliesAllProviderValuesToLineItemPayload(): void
     {
         $providerA = $this->makeProvider(['keyA' => 'valueA']);

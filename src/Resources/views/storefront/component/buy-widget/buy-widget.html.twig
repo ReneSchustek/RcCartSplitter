@@ -14,7 +14,7 @@
         ? rcCartSplitterTmmsInfo.message
         : null %}
     {% set rcCartSplitterTmmsMessage = rcCartSplitterTmmsMessage
-        ?: ('rc-cart-splitter.tmmsInformationMessage'|trans|sw_sanitize) %}
+        ?: ('rc-cart-splitter.tmmsInformationMessage'|trans) %}
 
     {# nl2br maskiert vorher: HTML im Text erscheint als Text, nur Zeilenumbrüche werden zu <br>. #}
     <div class="alert-content-container">

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Ruhrcoder\RcCartSplitter\Service;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Exception as DbalException;
 use Psr\Log\LoggerInterface;
 use Ruhrcoder\RcCartSplitter\TmmsConstants;
 use Shopware\Core\Checkout\Cart\Event\BeforeLineItemAddedEvent;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -105,12 +105,12 @@ final class TmmsCartInputProvider implements CartInputProviderInterface
             return null;
         }
 
-        // Der Primärschlüssel von `product` ist (id, version_id). Ohne Versionsfilter kann die
-        // Abfrage mehrere Zeilen treffen; LIMIT 1 nimmt dann eine davon ohne feste Reihenfolge.
+        // Der Primärschlüssel von `product` ist (id, version_id). Gelesen wird die Live-Fassung; ein
+        // Entwurf aus der Verwaltung trägt dieselbe Kennung und vielleicht eine andere Nummer.
         try {
             $productNumber = $this->connection->fetchOne(
-                'SELECT product_number FROM product WHERE id = :id LIMIT 1',
-                ['id' => Uuid::fromHexToBytes($productId)],
+                'SELECT product_number FROM product WHERE id = :id AND version_id = :version LIMIT 1',
+                ['id' => Uuid::fromHexToBytes($productId), 'version' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION)],
             );
         } catch (\Throwable $error) {
             // `\Throwable` statt nur `DbalException`: Der Provider hängt im Add-to-Cart-Weg, und

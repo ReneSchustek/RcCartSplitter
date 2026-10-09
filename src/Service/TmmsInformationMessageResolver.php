@@ -39,7 +39,7 @@ final class TmmsInformationMessageResolver implements TmmsInformationMessageReso
             return $this->loggedResolution($product, $productMessage, TmmsInfoMessageScope::Product);
         }
 
-        $categoryMessage = $this->resolveFromCategoryChain($product, $context);
+        $categoryMessage = $this->resolveFromCategoryChain($product, $salesChannelId, $context);
         if ($categoryMessage !== null) {
             return $this->loggedResolution($product, $categoryMessage, TmmsInfoMessageScope::Category);
         }
@@ -52,9 +52,9 @@ final class TmmsInformationMessageResolver implements TmmsInformationMessageReso
         return new ResolvedTmmsInfoMessage(null, TmmsInfoMessageScope::Default);
     }
 
-    private function resolveFromCategoryChain(ProductEntity $product, Context $context): ?string
+    private function resolveFromCategoryChain(ProductEntity $product, string $salesChannelId, Context $context): ?string
     {
-        $primaryCategoryId = $this->primaryCategoryId($product);
+        $primaryCategoryId = $this->primaryCategoryId($product, $salesChannelId);
 
         if ($primaryCategoryId === null) {
             return null;
@@ -73,18 +73,14 @@ final class TmmsInformationMessageResolver implements TmmsInformationMessageReso
         return null;
     }
 
-    private function primaryCategoryId(ProductEntity $product): ?string
+    private function primaryCategoryId(ProductEntity $product, string $salesChannelId): ?string
     {
-        // Die Produktseite lädt `mainCategories` mit. Genommen wird die erste geladene
-        // Hauptkategorie, ohne Abgleich mit dem Verkaufskanal. Fehlt sie, bleibt die Kategorieliste.
-        $mainCategories = $product->getMainCategories();
-        if ($mainCategories !== null) {
-            $firstMain = $mainCategories->first();
-            if ($firstMain !== null) {
-                $categoryId = $firstMain->getCategoryId();
-                if ($categoryId !== '') {
-                    return $categoryId;
-                }
+        // Die Produktseite lädt `mainCategories` mit, je Verkaufskanal eine. Genommen wird die des
+        // aufrufenden Kanals; die eines anderen Kanals kann in einem fremden Kategoriebaum liegen.
+        // Fehlt sie, bleibt die Kategorieliste.
+        foreach ($product->getMainCategories() ?? [] as $mainCategory) {
+            if ($mainCategory->getSalesChannelId() === $salesChannelId && $mainCategory->getCategoryId() !== '') {
+                return $mainCategory->getCategoryId();
             }
         }
 
