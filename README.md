@@ -42,7 +42,7 @@ php bin/console cache:clear
 
 ## Erweiterung: weitere Suffix-Plugins
 
-Das Plugin konsumiert generisch alle `data-rc*Suffix`-Attribute am `<form>` über `_collectAllSuffixes()` und mischt sie automatisch in den LineItem-ID-Hash. Die Event-Anmeldung ist seit v2.0.0 ebenfalls generisch: ein einziges Event `rcSuffixChanged` triggert die Re-Berechnung. Ein neues Suffix-Plugin braucht keine Code-Änderung an dieser Datei mehr — zwei Schritte reichen:
+Das Plugin konsumiert generisch alle `data-rc*Suffix`-Attribute am `<form>` über `_collectAllSuffixes()` und mischt sie automatisch in den LineItem-ID-Hash. Die Event-Anmeldung ist seit v2.0.0 ebenfalls generisch: ein einziges Event `rcSuffixChanged` triggert die Re-Berechnung. Ein neues Suffix-Plugin braucht keine Code-Änderung an dieser Datei mehr, zwei Schritte reichen:
 
 1. Suffix-Wert am Form setzen:
    ```js
@@ -71,7 +71,7 @@ Keine eigene Konfiguration nötig. Das Plugin erkennt TMMS-Eingabefelder automat
 Der Plugin-Standard ist DAL (`EntityRepository`); zwei Stellen weichen bewusst auf DBAL aus:
 
 1. `OrderInputCorrectionService::batchUpdateCustomFields()` schreibt `custom_fields` per Batch-`UPDATE` direkt in die Tabelle `order_line_item`. DAL würde bei jedem Schreibvorgang ein `EntityWrittenEvent` feuern, das TmmsProductCustomerInputs abfängt und unsere Korrektur sofort wieder mit dem Session-Wert überschreibt. DBAL umgeht den Event-Bus. Zusätzlich wird ein einzelnes `CASE id WHEN ... THEN ... END`-Statement in einer Transaktion abgesetzt, damit Bestellungen mit vielen Split-Positionen nicht in N Einzel-Roundtrips zerfallen.
-2. `TmmsCartInputProvider::fetchProductNumber()` liest die `product_number` per Native-`SELECT` aus der `product`-Tabelle. DAL würde die komplette `ProductEntity` inklusive Translations und Associations laden — pro `AddToCart`-Request wäre das unnötig teuer.
+2. `TmmsCartInputProvider::fetchProductNumber()` liest die `product_number` per Native-`SELECT` aus der `product`-Tabelle. DAL würde die komplette `ProductEntity` inklusive Translations und Associations laden, und pro `AddToCart`-Request wäre das unnötig teuer.
 
 Beide Stellen verwenden Parameter-Binding (`Uuid::fromHexToBytes`) und sind durch Unit- und Integration-Tests abgedeckt.
 
@@ -81,9 +81,9 @@ Seit dem 28. Juni 2025 verlangt das BFSG für B2C-Shops WCAG 2.2 AA. Dieses Plug
 
 ### Vom Plugin abgedeckt
 
-- Semantische `<dl>/<dt>/<dd>`-Struktur für Begriff-Wert-Paare statt `<ul>/<li>/<strong>` (WCAG 1.3.1 — Beziehungen)
+- Semantische `<dl>/<dt>/<dd>`-Struktur für Begriff-Wert-Paare statt `<ul>/<li>/<strong>` (WCAG 1.3.1, Beziehungen)
 - Programmatischer Gruppenkontext über `aria-label="{{ 'rc-cart-splitter.lineItemInputs'|trans|sw_sanitize }}"` an der `<dl>` (Snippets DE/EN unter `src/Resources/snippet/`, WCAG 1.3.1)
-- Bootstrap-Token `text-body-secondary` statt `text-muted` (WCAG 1.4.3 — dokumentierter Kontrast)
+- Bootstrap-Token `text-body-secondary` statt `text-muted` (WCAG 1.4.3, dokumentierter Kontrast)
 - Maximale Feldzahl zentral aus `TmmsConstants::INPUT_COUNT`, kein Drift zwischen PHP/JS/Twig
 
 ### Kontrast-Baseline (Bootstrap 5.3 Default)
@@ -97,7 +97,7 @@ Seit dem 28. Juni 2025 verlangt das BFSG für B2C-Shops WCAG 2.2 AA. Dieses Plug
 
 ### Theme-/Storefront-Pflicht
 
-- Kontrast ≥ 4.5:1 im aktiven Theme — `text-body-secondary` ist Token-basiert, der finale Wert hängt vom Theme
+- Kontrast ≥ 4.5:1 im aktiven Theme: `text-body-secondary` ist Token-basiert, der finale Wert hängt vom Theme
 - Sichtbarer Fokus auf Buy-Form-Elementen (`:focus-visible`)
 - `<html lang="de">` (oder Sprach-Code des Storefronts)
 - Tastaturbedienbarkeit der Buy-Box inkl. TMMS-Eingabefelder
@@ -112,7 +112,7 @@ transaktional, mit Rücknahme).
 
 **Vor dem ersten Schritt lesen:** Die Reihenfolge unten ist nicht beliebig. Wer dieses Plugin
 abschaltet, solange Positionen mit Kundeneingaben im Warenkorb eines Kunden liegen, nimmt diesen
-Positionen ihre Zuordnung — die Eingaben stehen dann nicht mehr an der richtigen Position.
+Positionen ihre Zuordnung. Die Eingaben stehen dann nicht mehr an der richtigen Position.
 
 ### Ablauf
 
@@ -127,9 +127,9 @@ Positionen ihre Zuordnung — die Eingaben stehen dann nicht mehr an der richtig
    ```
 
    Solange `zuletzt` in den letzten Tagen liegt, ist das Plugin im aktiven Einsatz. Der Marker
-   heißt `rcTmmsActive`, die Werte selbst stehen daneben als `rcTmmsField<N>Value` — auf dem
-   Live-Spiegel gemessen; `rc_tmms_inputs` kommt nur im Session-Rückfall vor und fehlt in den
-   Bestellungen.
+   heißt `rcTmmsActive`, die Werte selbst stehen daneben als `rcTmmsField<N>Value`.
+   Gemessen wurde das an einer Kopie des Live-Shops; `rc_tmms_inputs` kommt nur im Session-Rückfall
+   vor und fehlt in den Bestellungen.
 
 2. **RcCustomFields einrichten** und die Produkt-Felder übernehmen:
 
@@ -138,12 +138,12 @@ Positionen ihre Zuordnung — die Eingaben stehen dann nicht mehr an der richtig
    php bin/console rc-custom-fields:migrate-tmms
    ```
 
-3. **Ruhige Minute abwarten.** Keine offenen Warenkörbe mit Kundeneingaben — die Abfrage aus
+3. **Ruhige Minute abwarten.** Keine offenen Warenkörbe mit Kundeneingaben. Die Abfrage aus
    Schritt 1 auf `cart` statt `order_line_item` angewendet zeigt es; im Zweifel außerhalb der
    Geschäftszeiten umstellen.
 
 4. **RcCartSplitter deaktivieren**, Cache leeren, im Frontend gegenprüfen: Ein Artikel mit
-   Kundeneingabe zweimal mit **verschiedenen** Werten in den Warenkorb — es müssen weiterhin zwei
+   Kundeneingabe zweimal mit **verschiedenen** Werten in den Warenkorb legen. Es müssen weiterhin zwei
    Positionen entstehen, jetzt von RcCustomFields.
 
 5. **Deinstallieren mit erhaltenen Daten:**
@@ -168,14 +168,14 @@ php bin/console plugin:activate RcCartSplitter
 php bin/console cache:clear
 ```
 
-Ab Schritt 5 ist die Rückkehr eine Neuinstallation — die Bestelldaten bleiben, die
+Ab Schritt 5 ist die Rückkehr eine Neuinstallation. Die Bestelldaten bleiben, die
 Plugin-Konfiguration ist neu zu setzen.
 
 ### Woran man erkennt, dass etwas nicht stimmt
 
 | Symptom | Bedeutung |
 |---|---|
-| Eine Position zeigt die Eingabe einer anderen | Beide Plugins waren gleichzeitig aktiv — eines abschalten |
+| Eine Position zeigt die Eingabe einer anderen | Beide Plugins waren gleichzeitig aktiv, eines abschalten |
 | Zwei gleiche Artikel mit verschiedenen Eingaben landen in einer Position | Keines der beiden Plugins greift; Schritt 4 rückgängig machen |
 | Eingaben fehlen in neuen Bestellungen, alte sind vollständig | Die Übernahme aus Schritt 2 lief nicht oder nicht für alle Produkte |
 
@@ -219,7 +219,7 @@ CI läuft automatisch bei Push und Pull Requests via GitHub Actions.
 
 ### JS-Unit-Tests
 
-Die Storefront-Logik in `cart-splitter.plugin.js` ist über Node-eigene Test-Tools (`node:test`) abgedeckt. Keine npm-Dependencies, keine `package.json` — der Test-Runner liest die Quelldatei direkt ein, evaluiert sie gegen eine Plugin-Stub-Klasse und prüft `_fnv32a`, `_computeId`, `_collectAllSuffixes`, `_cleanLabel` und `_getTmmsFieldLabel`. Determinismus von FNV-1a ist über öffentliche Referenzwerte (z. B. `0xbf9cf968` für `"foobar"`) belegt.
+Die Storefront-Logik in `cart-splitter.plugin.js` ist über Node-eigene Test-Tools (`node:test`) abgedeckt. Keine npm-Dependencies, keine `package.json`: Der Test-Runner liest die Quelldatei direkt ein, evaluiert sie gegen eine Plugin-Stub-Klasse und prüft `_fnv32a`, `_computeId`, `_collectAllSuffixes`, `_cleanLabel` und `_getTmmsFieldLabel`. Determinismus von FNV-1a ist über öffentliche Referenzwerte (z. B. `0xbf9cf968` für `"foobar"`) belegt.
 
 ```bash
 node --test tests/Js/cart-splitter.test.mjs
@@ -237,7 +237,7 @@ Tests in `tests/Integration/` sichern den Korrektur-Pfad gegen eine echte Shopwa
 KERNEL_CLASS=Shopware\\Core\\Kernel vendor/bin/phpunit --testsuite=Integration
 ```
 
-Ohne Bootstrap überspringen die Tests sich selbst — `composer test` führt nur die Unit-Suite aus.
+Ohne Bootstrap überspringen die Tests sich selbst, `composer test` führt nur die Unit-Suite aus.
 
 ## Versionen
 
@@ -245,7 +245,7 @@ Vollständige Versions-Historie: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Release-Prozess
 
-Rollback bei fehlgeschlagenem Update: Downgrade über den Plugin-Manager reicht — das Plugin bringt keine eigenen Migrationen mit.
+Rollback bei fehlgeschlagenem Update: Downgrade über den Plugin-Manager reicht, weil das Plugin keine eigenen Migrationen mitbringt.
 
 ## Lizenz
 
