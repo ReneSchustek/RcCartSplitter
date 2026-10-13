@@ -27,10 +27,8 @@ final class TmmsPayloadReader
      * den ersten Namen liest, sieht über den zweiten Weg nichts, und die Kundeneingabe fällt
      * still aus. RcColorPicker und RcCustomFields lesen ebenfalls beide Namen.
      *
-     * Gesucht wird die Position unter dem Schlüssel der Produktkennung. Die Storefront schlüsselt
-     * `lineItems` so; eine Store-API-Liste mit fortlaufenden Indizes, wie `CartItemAddRoute` sie
-     * annimmt, trifft dieser Zugriff nur, wenn der Aufrufer die Einträge ebenfalls nach
-     * Produktkennung schlüsselt.
+     * Die Storefront schlüsselt `lineItems` nach Produktkennung, die Store-API schickt `items` als Liste
+     * mit fortlaufenden Indizes; `findItem()` sucht in beiden Formen.
      */
     private const PARAMETER_NAMES = ['lineItems', 'items'];
 
