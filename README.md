@@ -42,7 +42,7 @@ php bin/console cache:clear
 
 ## Erweiterung: weitere Suffix-Plugins
 
-Das Plugin konsumiert generisch alle `data-rc*Suffix`-Attribute am `<form>` über `_collectAllSuffixes()` und mischt sie automatisch in den LineItem-ID-Hash. Die Event-Anmeldung ist seit v2.0.0 ebenfalls generisch: ein einziges Event `rcSuffixChanged` triggert die Re-Berechnung. Ein neues Suffix-Plugin braucht keine Code-Änderung an dieser Datei mehr, zwei Schritte reichen:
+Das Plugin konsumiert generisch alle `data-rc*Suffix`-Attribute am `<form>` über `_collectAllSuffixes()` und mischt sie automatisch in den LineItem-ID-Hash. Die Event-Anmeldung ist ebenfalls generisch: ein einziges Event `rcSuffixChanged` triggert die Re-Berechnung. Ein neues Suffix-Plugin braucht keine Code-Änderung an dieser Datei, zwei Schritte reichen:
 
 1. Suffix-Wert am Form setzen:
    ```js
@@ -77,7 +77,7 @@ Beide Stellen verwenden Parameter-Binding (`Uuid::fromHexToBytes`) und sind durc
 
 ## Barrierefreiheit (BFSG)
 
-Seit dem 28. Juni 2025 verlangt das BFSG für B2C-Shops WCAG 2.2 AA. Dieses Plugin rendert nur einen kleinen Block unter dem Cart-LineItem; alles andere (Buy-Box, Mini-Cart-Region, Fokus-Stil) liegt beim Storefront-Theme.
+Das BFSG verlangt von B2C-Shops Barrierefreiheit; den Maßstab setzt die harmonisierte Norm EN 301 549, die für Webinhalte WCAG 2.1 AA übernimmt. Dieses Plugin rendert nur einen kleinen Block unter dem Cart-LineItem; alles andere (Buy-Box, Mini-Cart-Region, Fokus-Stil) liegt beim Storefront-Theme.
 
 ### Vom Plugin abgedeckt
 
