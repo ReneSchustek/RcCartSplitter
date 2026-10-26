@@ -3,7 +3,7 @@
     "description": "Erzeugt separate Warenkorbpositionen wenn Kundeneingaben (z. B. TMMS) sich unterscheiden",
     "version": "2.1.7",
     "type": "shopware-platform-plugin",
-    "license": "MIT",
+    "license": "proprietary",
     "authors": [
         {
             "name": "Ruhrcoder",

@@ -249,6 +249,6 @@ Rollback bei fehlgeschlagenem Update: Downgrade über den Plugin-Manager reicht,
 
 ## Lizenz
 
-MIT, siehe [LICENSE](LICENSE).
+Proprietär – siehe [composer.json](composer.json).
 
 <!-- TRIAGE-WORKFLOW: auto-managed by triage-deploy.ps1 -->
